@@ -11,9 +11,9 @@ class Friends extends StatefulWidget {
 class _FriendsState extends State<Friends> {
   @override
   Widget build(BuildContext context) {
-    return CustomEventsWidget(
+    return CustomWidget(
       title: 'My Friends',
-      onNewItemPressed: (){},
+      newButton: NewButton(label: 'New Friend',onPressed: (){}),
         topWidget: const Padding(
           padding: EdgeInsets.all(10.0),
           child: TextField(

@@ -1,4 +1,7 @@
 import 'package:celebratio/EventDetails.dart';
+import 'package:celebratio/InGifts.dart';
+import 'package:celebratio/OutGifts.dart';
+import 'package:celebratio/Profile.dart';
 import 'package:flutter/material.dart';
 
 import 'Events.dart';
@@ -15,8 +18,10 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       routes: {
         '/Friends': (context) => Friends(),
+        '/Profile':(context) => Profile(),
       },
       title: 'Celebratio',
       theme: ThemeData(
@@ -40,6 +45,9 @@ class _MyHomePageState extends State<MyHomePage> {
   final List<Widget> pages = [
     Events(),
     Friends(),
+    Card(),
+    InGifts(),
+    OutGifts(),
   ];
   var _selectedIdx = 2;
 
@@ -67,7 +75,7 @@ class _MyHomePageState extends State<MyHomePage> {
     const radius = 20.0;
     return Scaffold(
       backgroundColor: Colors.black,
-      body: _selectedIdx == 0 || _selectedIdx == 1
+      body: _selectedIdx == 0 || _selectedIdx == 1 || _selectedIdx == 3 || _selectedIdx == 4
           ? pages[_selectedIdx]
           : homeColumn(theme, radius, style, context),
       bottomNavigationBar: NavigationBar(

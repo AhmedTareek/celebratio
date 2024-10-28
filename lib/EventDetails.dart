@@ -1,3 +1,4 @@
+import 'package:celebratio/GiftDetails.dart';
 import 'package:flutter/material.dart';
 import 'CustomWidget.dart';
 
@@ -15,7 +16,8 @@ class EventDetails extends StatefulWidget {
 class _EventDetailsState extends State<EventDetails> {
   @override
   Widget build(BuildContext context) {
-    return CustomEventsWidget(
+    return CustomWidget(
+      title: widget.eventName,
       topWidget: EventCard(
           name: 'ww',
           location: 'location',
@@ -35,6 +37,9 @@ class _EventDetailsState extends State<EventDetails> {
         return Padding(
           padding: const EdgeInsets.all(8.0),
           child: ListTile(
+            onTap: (){
+              Navigator.push(context, MaterialPageRoute(builder: (context) => GiftDetails()));
+            },
             onLongPress: (){
               if(idx%4==0) {
                 showModalBottomSheet(
@@ -80,9 +85,7 @@ class _EventDetailsState extends State<EventDetails> {
         );
       },
       itemCount: 25,
-      onNewItemPressed: () {
-        print('new gift');
-      },
+      newButton: NewButton(label: 'New Gift',onPressed: (){}),
     );
   }
 }

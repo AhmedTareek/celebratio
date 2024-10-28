@@ -1,7 +1,6 @@
-import 'package:celebratio/EventDetails.dart';
 import 'package:flutter/material.dart';
 
-class CustomEventsWidget extends StatefulWidget {
+class CustomWidget extends StatefulWidget {
   final Widget? topWidget;
   final List<FilterButton> filterButtons;
   final List<SortOption> sortOptions;
@@ -9,7 +8,7 @@ class CustomEventsWidget extends StatefulWidget {
   final int itemCount;
   final String title;
   final Widget? leadingIcon;
-  final VoidCallback? onNewItemPressed;
+  final NewButton? newButton;
   final Function(int)? onTileEdit;
   final Function(int)? onTileDelete;
   final Function(int)? onTileTap;
@@ -18,16 +17,16 @@ class CustomEventsWidget extends StatefulWidget {
   final Color? primaryColor;
   final Color? primaryColorLight;
 
-  const CustomEventsWidget({
+  const CustomWidget({
     Key? key,
     required this.filterButtons,
     required this.sortOptions,
     required this.tileBuilder,
     required this.itemCount,
     this.topWidget,
+    this.newButton,
     this.title = 'Events',
     this.leadingIcon,
-    this.onNewItemPressed,
     this.onTileEdit,
     this.onTileDelete,
     this.onTileTap,
@@ -38,10 +37,10 @@ class CustomEventsWidget extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  State<CustomEventsWidget> createState() => _CustomEventsWidgetState();
+  State<CustomWidget> createState() => _CustomWidgetState();
 }
 
-class _CustomEventsWidgetState extends State<CustomEventsWidget> {
+class _CustomWidgetState extends State<CustomWidget> {
   final ScrollController _scrollController = ScrollController();
   bool _isVisible = false;
   int? selectedButtonIndex;
@@ -113,7 +112,9 @@ class _CustomEventsWidgetState extends State<CustomEventsWidget> {
         leading: widget.leadingIcon ??
             IconButton(
               icon: const Icon(Icons.account_circle),
-              onPressed: () {},
+              onPressed: () {
+                Navigator.pushNamed(context, '/Profile');
+              },
             ),
         title: Text(
           widget.title,
@@ -133,10 +134,10 @@ class _CustomEventsWidgetState extends State<CustomEventsWidget> {
                 icon: Icon(Icons.sort),
               ),
             ),
-          if (widget.onNewItemPressed != null)
+          if (widget.newButton != null)
             ElevatedButton.icon(
-              onPressed: widget.onNewItemPressed,
-              label: const Text('New'),
+              onPressed: widget.newButton!.onPressed,
+              label: Text(widget.newButton!.label),
               icon: const Icon(Icons.add),
             )
         ],
@@ -223,6 +224,13 @@ class SortOption {
   final VoidCallback? onSelected;
 
   SortOption({required this.label, this.onSelected});
+}
+
+class NewButton {
+  final String label;
+  final VoidCallback? onPressed;
+
+  NewButton({required this.label, required this.onPressed});
 }
 
 // Sort Dialog remains the same

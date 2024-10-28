@@ -9,7 +9,6 @@ class OutGifts extends StatefulWidget {
 class _OutGiftsState extends State<OutGifts> {
   @override
   Widget build(BuildContext context) {
-    // TODO: implement build
     return CustomWidget(
         title: 'Gifts You are Giving',
         filterButtons: [],

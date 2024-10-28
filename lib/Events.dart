@@ -1,3 +1,4 @@
+import 'package:celebratio/CustomWidget.dart';
 import 'package:celebratio/EventDetails.dart';
 import 'package:flutter/material.dart';
 
@@ -75,142 +76,178 @@ class _EventState extends State<Events> {
 
   @override
   Widget build(BuildContext context) {
-    print(_statusSelections);
-    var theme = Theme.of(context);
-
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: theme.secondaryHeaderColor,
-        leading: IconButton(
-          icon: const Icon(Icons.account_circle),
-          onPressed: () {},
-        ),
-        title: Text(
-          'My Events',
-          style: TextStyle(color: theme.primaryColor),
-        ),
-        actions: [
-          Container(
-            decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: _filterSelections.any((element) => element == true)
-                    ? theme.primaryColorLight
-                    : null),
-            child: IconButton(
-              onPressed: () {
-                print(selectedButtonIndex);
-                showDialog(
-                  context: context,
-                  builder: (BuildContext context) => SortDialog(
-                    initialSelection: selectedButtonIndex,
-                  ),
-                ).then((selectedOption) {
-                  if (selectedOption != null) {
-                    setState(() {
-                      _filterSelections.fillRange(
-                          0, _filterSelections.length, false);
-                      if (selectedOption >= 0) {
-                        selectedButtonIndex = selectedOption;
-                        _filterSelections[selectedOption] = true;
-                      } else {
-                        selectedButtonIndex = null;
-                      }
-                    });
-                    print('Selected option: ${selectedOption + 1}');
-                  }
-                });
-              },
-              icon: Icon(Icons.sort),
-            ),
-          ),
-          ElevatedButton.icon(
-            onPressed: () {},
-            label: const Text('New Event'),
-            icon: const Icon(Icons.add),
-          )
+    return CustomWidget(
+      newButton: NewButton(label: 'New Event',onPressed: (){}),
+        filterButtons: [
+          FilterButton(label: 'Past'),
+          FilterButton(label: 'Current'),
+          FilterButton(label: 'Upcoming'),
         ],
-      ),
-      body: ListView(
-        controller: _scrollController,
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.start,
+        sortOptions: [
+          SortOption(label: 'Name'),
+          SortOption(label: 'Category')
+        ],
+        tileBuilder: (context, index) {
+          return ListTile(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) =>
+                      EventDetails(eventName: 'Wedding $index'),
+                ),
+              );
+            },
+            onLongPress: () => _showOptionsDialog(index),
+            trailing: Text('2024-12-15'),
+            title: Text('Wedding $index'),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                OutlinedButton(
-                    style: ButtonStyle(
-                        backgroundColor: _statusSelections[0]
-                            ? WidgetStatePropertyAll(theme.primaryColorLight)
-                            : null),
-                    onPressed: () {
-                      setState(() {
-                        changeButtonBackGroundColor(0, _statusSelections);
-                      });
-                    },
-                    child: Text('Past')),
-                SizedBox(
-                  width: 8.0,
-                ),
-                OutlinedButton(
-                    style: ButtonStyle(
-                        backgroundColor: _statusSelections[1]
-                            ? WidgetStatePropertyAll(theme.primaryColorLight)
-                            : null),
-                    onPressed: () {
-                      setState(() {
-                        changeButtonBackGroundColor(1, _statusSelections);
-                      });
-                    },
-                    child: Text('Current')),
-                SizedBox(
-                  width: 8.0,
-                ),
-                OutlinedButton(
-                    style: ButtonStyle(
-                      backgroundColor: _statusSelections[2]
-                          ? WidgetStatePropertyAll(theme.primaryColorLight)
-                          : null,
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        changeButtonBackGroundColor(2, _statusSelections);
-                      });
-                    },
-                    child: Text('Upcomming')),
+                Text('Ahmed Tarek'),
+                Text('one line from the description ...')
               ],
             ),
-          ),
-          for (int i = 0; i < 35; i++)
-            ListTile(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => EventDetails(eventName: 'Wedding $i'),
-                  ),
-                );
-              },
-              onLongPress: () => _showOptionsDialog(i),
-              trailing: Text('2024-12-15'),
-              title: Text('Wedding $i'),
-              subtitle: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Ahmed Tarek'),
-                  Text('one line from the description ...')
-                ],
-              ),
-            )
-        ],
-      ),
-      floatingActionButton: _isVisible
-          ? FloatingActionButton(
-              onPressed: _scrollToTop, // Scroll to the top when pressed
-              child: const Icon(Icons.arrow_upward),
-            )
-          : null,
-    );
+          );
+        },
+        itemCount: 36);
+
+    // print(_statusSelections);
+    // var theme = Theme.of(context);
+    //
+    // return Scaffold(
+    //   appBar: AppBar(
+    //     backgroundColor: theme.secondaryHeaderColor,
+    //     leading: IconButton(
+    //       icon: const Icon(Icons.account_circle),
+    //       onPressed: () {},
+    //     ),
+    //     title: Text(
+    //       'My Events',
+    //       style: TextStyle(color: theme.primaryColor),
+    //     ),
+    //     actions: [
+    //       Container(
+    //         decoration: BoxDecoration(
+    //             shape: BoxShape.circle,
+    //             color: _filterSelections.any((element) => element == true)
+    //                 ? theme.primaryColorLight
+    //                 : null),
+    //         child: IconButton(
+    //           onPressed: () {
+    //             print(selectedButtonIndex);
+    //             showDialog(
+    //               context: context,
+    //               builder: (BuildContext context) => SortDialog(
+    //                 initialSelection: selectedButtonIndex,
+    //               ),
+    //             ).then((selectedOption) {
+    //               if (selectedOption != null) {
+    //                 setState(() {
+    //                   _filterSelections.fillRange(
+    //                       0, _filterSelections.length, false);
+    //                   if (selectedOption >= 0) {
+    //                     selectedButtonIndex = selectedOption;
+    //                     _filterSelections[selectedOption] = true;
+    //                   } else {
+    //                     selectedButtonIndex = null;
+    //                   }
+    //                 });
+    //                 print('Selected option: ${selectedOption + 1}');
+    //               }
+    //             });
+    //           },
+    //           icon: Icon(Icons.sort),
+    //         ),
+    //       ),
+    //       ElevatedButton.icon(
+    //         onPressed: () {},
+    //         label: const Text('New Event'),
+    //         icon: const Icon(Icons.add),
+    //       )
+    //     ],
+    //   ),
+    //   body: ListView(
+    //     controller: _scrollController,
+    //     children: [
+    //       Padding(
+    //         padding: const EdgeInsets.all(8.0),
+    //         child: Row(
+    //           mainAxisAlignment: MainAxisAlignment.start,
+    //           children: [
+    //             OutlinedButton(
+    //                 style: ButtonStyle(
+    //                     backgroundColor: _statusSelections[0]
+    //                         ? WidgetStatePropertyAll(theme.primaryColorLight)
+    //                         : null),
+    //                 onPressed: () {
+    //                   setState(() {
+    //                     changeButtonBackGroundColor(0, _statusSelections);
+    //                   });
+    //                 },
+    //                 child: Text('Past')),
+    //             SizedBox(
+    //               width: 8.0,
+    //             ),
+    //             OutlinedButton(
+    //                 style: ButtonStyle(
+    //                     backgroundColor: _statusSelections[1]
+    //                         ? WidgetStatePropertyAll(theme.primaryColorLight)
+    //                         : null),
+    //                 onPressed: () {
+    //                   setState(() {
+    //                     changeButtonBackGroundColor(1, _statusSelections);
+    //                   });
+    //                 },
+    //                 child: Text('Current')),
+    //             SizedBox(
+    //               width: 8.0,
+    //             ),
+    //             OutlinedButton(
+    //                 style: ButtonStyle(
+    //                   backgroundColor: _statusSelections[2]
+    //                       ? WidgetStatePropertyAll(theme.primaryColorLight)
+    //                       : null,
+    //                 ),
+    //                 onPressed: () {
+    //                   setState(() {
+    //                     changeButtonBackGroundColor(2, _statusSelections);
+    //                   });
+    //                 },
+    //                 child: Text('Upcomming')),
+    //           ],
+    //         ),
+    //       ),
+    //       for (int i = 0; i < 35; i++)
+    //         ListTile(
+    //           onTap: () {
+    //             Navigator.push(
+    //               context,
+    //               MaterialPageRoute(
+    //                 builder: (context) => EventDetails(eventName: 'Wedding $i'),
+    //               ),
+    //             );
+    //           },
+    //           onLongPress: () => _showOptionsDialog(i),
+    //           trailing: Text('2024-12-15'),
+    //           title: Text('Wedding $i'),
+    //           subtitle: Column(
+    //             crossAxisAlignment: CrossAxisAlignment.start,
+    //             children: [
+    //               Text('Ahmed Tarek'),
+    //               Text('one line from the description ...')
+    //             ],
+    //           ),
+    //         )
+    //     ],
+    //   ),
+    //   floatingActionButton: _isVisible
+    //       ? FloatingActionButton(
+    //           onPressed: _scrollToTop, // Scroll to the top when pressed
+    //           child: const Icon(Icons.arrow_upward),
+    //         )
+    //       : null,
+    // );
   }
 }
 
