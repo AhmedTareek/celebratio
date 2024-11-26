@@ -8,45 +8,12 @@ class Events extends StatefulWidget {
 }
 
 class _EventState extends State<Events> {
-  final List<bool> _statusSelections = List.generate(3, (idx) => idx == 0);
-  final List<bool> _filterSelections = List.generate(2, (_) => false);
-  final ScrollController _scrollController = ScrollController();
-  bool _isVisible = false;
   int? selectedButtonIndex;
-
-  void _scrollToTop() {
-    _scrollController.animateTo(
-      0.0, // Scroll to the top (0.0 offset)
-      duration: const Duration(milliseconds: 500),
-      curve: Curves.easeInOut,
-    );
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    // Add a listener to the ScrollController to monitor the scroll offset
-    _scrollController.addListener(() {
-      if (_scrollController.offset > 300) {
-        // Show button when scrolled down
-        setState(() {
-          _isVisible = true;
-        });
-      } else {
-        // Hide button when at the top
-        setState(() {
-          _isVisible = false;
-        });
-      }
-    });
-  }
-
   void changeButtonBackGroundColor(int idx, list) {
     for (int i = 0; i < list.length; i++) {
       list[i] = i == idx;
     }
   }
-
   void _showOptionsDialog(int index) {
     showModalBottomSheet(
       context: context,
@@ -73,7 +40,6 @@ class _EventState extends State<Events> {
       },
     );
   }
-
   @override
   Widget build(BuildContext context) {
     return CustomWidget(
@@ -112,142 +78,6 @@ class _EventState extends State<Events> {
         },
         itemCount: 36);
 
-    // print(_statusSelections);
-    // var theme = Theme.of(context);
-    //
-    // return Scaffold(
-    //   appBar: AppBar(
-    //     backgroundColor: theme.secondaryHeaderColor,
-    //     leading: IconButton(
-    //       icon: const Icon(Icons.account_circle),
-    //       onPressed: () {},
-    //     ),
-    //     title: Text(
-    //       'My Events',
-    //       style: TextStyle(color: theme.primaryColor),
-    //     ),
-    //     actions: [
-    //       Container(
-    //         decoration: BoxDecoration(
-    //             shape: BoxShape.circle,
-    //             color: _filterSelections.any((element) => element == true)
-    //                 ? theme.primaryColorLight
-    //                 : null),
-    //         child: IconButton(
-    //           onPressed: () {
-    //             print(selectedButtonIndex);
-    //             showDialog(
-    //               context: context,
-    //               builder: (BuildContext context) => SortDialog(
-    //                 initialSelection: selectedButtonIndex,
-    //               ),
-    //             ).then((selectedOption) {
-    //               if (selectedOption != null) {
-    //                 setState(() {
-    //                   _filterSelections.fillRange(
-    //                       0, _filterSelections.length, false);
-    //                   if (selectedOption >= 0) {
-    //                     selectedButtonIndex = selectedOption;
-    //                     _filterSelections[selectedOption] = true;
-    //                   } else {
-    //                     selectedButtonIndex = null;
-    //                   }
-    //                 });
-    //                 print('Selected option: ${selectedOption + 1}');
-    //               }
-    //             });
-    //           },
-    //           icon: Icon(Icons.sort),
-    //         ),
-    //       ),
-    //       ElevatedButton.icon(
-    //         onPressed: () {},
-    //         label: const Text('New Event'),
-    //         icon: const Icon(Icons.add),
-    //       )
-    //     ],
-    //   ),
-    //   body: ListView(
-    //     controller: _scrollController,
-    //     children: [
-    //       Padding(
-    //         padding: const EdgeInsets.all(8.0),
-    //         child: Row(
-    //           mainAxisAlignment: MainAxisAlignment.start,
-    //           children: [
-    //             OutlinedButton(
-    //                 style: ButtonStyle(
-    //                     backgroundColor: _statusSelections[0]
-    //                         ? WidgetStatePropertyAll(theme.primaryColorLight)
-    //                         : null),
-    //                 onPressed: () {
-    //                   setState(() {
-    //                     changeButtonBackGroundColor(0, _statusSelections);
-    //                   });
-    //                 },
-    //                 child: Text('Past')),
-    //             SizedBox(
-    //               width: 8.0,
-    //             ),
-    //             OutlinedButton(
-    //                 style: ButtonStyle(
-    //                     backgroundColor: _statusSelections[1]
-    //                         ? WidgetStatePropertyAll(theme.primaryColorLight)
-    //                         : null),
-    //                 onPressed: () {
-    //                   setState(() {
-    //                     changeButtonBackGroundColor(1, _statusSelections);
-    //                   });
-    //                 },
-    //                 child: Text('Current')),
-    //             SizedBox(
-    //               width: 8.0,
-    //             ),
-    //             OutlinedButton(
-    //                 style: ButtonStyle(
-    //                   backgroundColor: _statusSelections[2]
-    //                       ? WidgetStatePropertyAll(theme.primaryColorLight)
-    //                       : null,
-    //                 ),
-    //                 onPressed: () {
-    //                   setState(() {
-    //                     changeButtonBackGroundColor(2, _statusSelections);
-    //                   });
-    //                 },
-    //                 child: Text('Upcomming')),
-    //           ],
-    //         ),
-    //       ),
-    //       for (int i = 0; i < 35; i++)
-    //         ListTile(
-    //           onTap: () {
-    //             Navigator.push(
-    //               context,
-    //               MaterialPageRoute(
-    //                 builder: (context) => EventDetails(eventName: 'Wedding $i'),
-    //               ),
-    //             );
-    //           },
-    //           onLongPress: () => _showOptionsDialog(i),
-    //           trailing: Text('2024-12-15'),
-    //           title: Text('Wedding $i'),
-    //           subtitle: Column(
-    //             crossAxisAlignment: CrossAxisAlignment.start,
-    //             children: [
-    //               Text('Ahmed Tarek'),
-    //               Text('one line from the description ...')
-    //             ],
-    //           ),
-    //         )
-    //     ],
-    //   ),
-    //   floatingActionButton: _isVisible
-    //       ? FloatingActionButton(
-    //           onPressed: _scrollToTop, // Scroll to the top when pressed
-    //           child: const Icon(Icons.arrow_upward),
-    //         )
-    //       : null,
-    // );
   }
 }
 
