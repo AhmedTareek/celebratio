@@ -1,6 +1,7 @@
 import 'package:celebratio/CustomWidget.dart';
 import 'package:celebratio/EventDetails.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 class Events extends StatefulWidget {
   @override
@@ -8,11 +9,46 @@ class Events extends StatefulWidget {
 }
 
 class _EventState extends State<Events> {
-  int? selectedButtonIndex;
-  void changeButtonBackGroundColor(int idx, list) {
-    for (int i = 0; i < list.length; i++) {
-      list[i] = i == idx;
-    }
+  int selectedButtonIndex = 0;
+  final DateTime today = DateTime.now();
+  final List<Map<String, dynamic>> allEvents = [
+    // Example events with name and date
+    {"name": "Past Event", "date": DateTime(2024, 11, 20)},
+    {
+      "name": "Today's Event",
+      "date": DateTime(
+          DateTime.now().year, DateTime.now().month, DateTime.now().day)
+    },
+    {"name": "Upcoming Event", "date": DateTime(2024, 12, 5)},
+    {"name": "A past Event", "date": DateTime(2024, 11, 15)},
+  ];
+  List<Map<String, dynamic>> filteredEvents = [];
+
+  void _filterEvents() {
+    setState(() {
+      if (selectedButtonIndex == 0) {
+        // Past
+        filteredEvents = allEvents
+            .where((event) =>
+                event['date'].isBefore(today) &&
+                !(event['date'].year == today.year &&
+                    event['date'].month == today.month &&
+                    event['date'].day == today.day))
+            .toList();
+      } else if (selectedButtonIndex == 1) {
+        // Current
+        filteredEvents = allEvents
+            .where((event) =>
+                event['date'].year == today.year &&
+                event['date'].month == today.month &&
+                event['date'].day == today.day)
+            .toList();
+      } else if (selectedButtonIndex == 2) {
+        // Upcoming
+        filteredEvents =
+            allEvents.where((event) => event['date'].isAfter(today)).toList();
+      }
+    });
   }
   void _showOptionsDialog(int index) {
     showModalBottomSheet(
@@ -40,20 +76,48 @@ class _EventState extends State<Events> {
       },
     );
   }
+
+  @override
+  void initState() {
+    super.initState();
+    _filterEvents(); // Initialize filtered events
+  }
+
   @override
   Widget build(BuildContext context) {
     return CustomWidget(
-      newButton: NewButton(label: 'New Event',onPressed: (){}),
+        newButton: NewButton(label: 'New Event', onPressed: () {}),
         filterButtons: [
-          FilterButton(label: 'Past'),
-          FilterButton(label: 'Current'),
-          FilterButton(label: 'Upcoming'),
+          FilterButton(
+              label: 'Past',
+              onPressed: () {
+                setState(() {
+                  selectedButtonIndex = 0;
+                  _filterEvents();
+                });
+              }),
+          FilterButton(
+              label: 'Current',
+              onPressed: () {
+                setState(() {
+                  selectedButtonIndex = 1;
+                  _filterEvents();
+                });
+              }),
+          FilterButton(
+            label: 'Upcoming',
+            onPressed: () {
+              setState(() {
+                selectedButtonIndex = 2;
+                _filterEvents();
+              });
+            },
+          ),
         ],
-        sortOptions: [
-          SortOption(label: 'Name'),
-          SortOption(label: 'Category')
-        ],
+        sortOptions: [SortOption(label: 'Name'), SortOption(label: 'Category')],
         tileBuilder: (context, index) {
+          final formatter = DateFormat('yyyy-MM-dd');
+          final event = filteredEvents[index];
           return ListTile(
             onTap: () {
               Navigator.push(
@@ -65,8 +129,8 @@ class _EventState extends State<Events> {
               );
             },
             onLongPress: () => _showOptionsDialog(index),
-            trailing: Text('2024-12-15'),
-            title: Text('Wedding $index'),
+            trailing: Text(formatter.format(event['date'])),
+            title: Text(event['name']),
             subtitle: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -76,8 +140,7 @@ class _EventState extends State<Events> {
             ),
           );
         },
-        itemCount: 36);
-
+        itemCount: filteredEvents.length);
   }
 }
 
