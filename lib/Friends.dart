@@ -9,16 +9,44 @@ class Friends extends StatefulWidget {
 }
 
 class _FriendsState extends State<Friends> {
+  final TextEditingController _searchController = TextEditingController();
+  List<String> allFriends = ["Alice", "Bob", "Charlie", "David"]; // Example data
+  List<String> filteredFriends = [];
+
+  void _filterFriends() {
+    String query = _searchController.text.toLowerCase();
+    setState(() {
+      filteredFriends = allFriends
+          .where((friend) => friend.toLowerCase().contains(query))
+          .toList();
+    });
+  }
+
+
+  @override
+  void initState() {
+    super.initState();
+    filteredFriends = allFriends; // Initially display all friends
+    _searchController.addListener(_filterFriends);
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return CustomWidget(
       title: 'My Friends',
       newButton: NewButton(label: 'New Friend',onPressed: (){}),
-        topWidget: const Padding(
-          padding: EdgeInsets.all(10.0),
+        topWidget: Padding(
+          padding: const EdgeInsets.all(10.0),
           child: TextField(
+            controller: _searchController,
             autofocus: false,
-            decoration: InputDecoration(
+            decoration: const InputDecoration(
               label: Text('search'),
               border: OutlineInputBorder(),
               prefixIcon: Icon(Icons.search),
@@ -29,8 +57,8 @@ class _FriendsState extends State<Friends> {
         sortOptions: [],
         tileBuilder: (context, index) {
           return ListTile(
-            leading: const CircleAvatar(),
-            title: Text('Friend $index'),
+            leading: CircleAvatar(),
+            title: Text(filteredFriends[index]),
             subtitle: const Text('Hello, I am using Celebratio'),
             trailing: Stack(
               alignment: Alignment.center,
@@ -51,7 +79,7 @@ class _FriendsState extends State<Friends> {
             ),
           );
         },
-        itemCount: 35);
+        itemCount: filteredFriends.length);
 
   }
 
