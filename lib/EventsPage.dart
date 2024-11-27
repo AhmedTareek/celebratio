@@ -3,12 +3,12 @@ import 'package:celebratio/EventDetails.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-class Events extends StatefulWidget {
+class EventsPage extends StatefulWidget {
   @override
-  State<Events> createState() => _EventState();
+  State<EventsPage> createState() => _EventState();
 }
 
-class _EventState extends State<Events> {
+class _EventState extends State<EventsPage> {
   int selectedButtonIndex = 0;
   final DateTime today = DateTime.now();
   final List<Map<String, dynamic>> allEvents = [
@@ -307,7 +307,7 @@ class _EventState extends State<Events> {
                 context,
                 MaterialPageRoute(
                   builder: (context) =>
-                      EventDetails(eventName: 'Wedding $index'),
+                      EventDetails(eventName: event['name']),
                 ),
               );
             },

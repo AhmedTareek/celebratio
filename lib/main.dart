@@ -4,7 +4,7 @@ import 'package:celebratio/OutGifts.dart';
 import 'package:celebratio/Profile.dart';
 import 'package:flutter/material.dart';
 
-import 'Events.dart';
+import 'EventsPage.dart';
 import 'Friends.dart';
 
 void main() {
@@ -43,13 +43,13 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   final List<Widget> pages = [
-    Events(),
+    EventsPage(),
     Friends(),
     Card(),
     InGifts(),
     OutGifts(),
   ];
-  var _selectedIdx = 2;
+  var _selectedIdx = 1;
 
   String getGreeting() {
     var now = DateTime.now();
@@ -77,7 +77,7 @@ class _MyHomePageState extends State<MyHomePage> {
       backgroundColor: Colors.black,
       body: _selectedIdx == 0 || _selectedIdx == 1 || _selectedIdx == 3 || _selectedIdx == 4
           ? pages[_selectedIdx]
-          : homeColumn(theme, radius, style, context),
+          : pages[1],
       bottomNavigationBar: NavigationBar(
         destinations: const [
           NavigationDestination(
@@ -98,113 +98,113 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-// this is going to be deleted //https://colorhunt.co/palette/f4f6fff3c623eb831710375c
-  Widget homeColumn(
-      ThemeData theme, double radius, TextStyle style, BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.account_circle),
-          onPressed: () {},
-        ),
-        title: Text(
-          'Celebratio',
-          style: TextStyle(color: theme.primaryColor),
-        ),
-        actions: [
-          ElevatedButton.icon(
-            onPressed: () {},
-            label: const Text('New Event'),
-            icon: const Icon(Icons.add),
-          ),
-        ],
-      ),
-      body: Column(
-        mainAxisSize: MainAxisSize.max,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Text(
-              '${getGreeting()}, Ahmed',
-              style:
-                  theme.textTheme.displaySmall?.copyWith(color: Colors.black54),
-            ),
-          ),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: ElevatedButton(
-                onPressed: () {},
-                style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF10375C),
-                    //const Color(0xFFB7E0FF),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(radius),
-                    )),
-                child: Text(
-                  'My Events',
-                  style: style.copyWith(fontWeight: FontWeight.bold,color: Colors.white),
-                ),
-              ),
-            ),
-          ),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: ElevatedButton(
-                onPressed: () {
-                  Navigator.pushNamed(context, '/Friends',
-                      arguments: {'colorCode': '0xFFFFF5CD'});
-                },
-                style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF10375C), // const Color(0xFFFFF5CD),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(radius),
-                    )),
-                child: Text(
-                  'Friends',
-                  style: style.copyWith(fontWeight: FontWeight.bold,color: Colors.white),
-                ),
-              ),
-            ),
-          ),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: ElevatedButton(
-                onPressed: () {},
-                style: ElevatedButton.styleFrom(
-                    backgroundColor:const Color(0xFF10375C), //const Color(0xFFFFCFB3),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(radius),
-                    )),
-                child: Text(
-                  'Gifts Out',
-                  style: style.copyWith(fontWeight: FontWeight.bold, color: Colors.white),
-                ),
-              ),
-            ),
-          ),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: ElevatedButton(
-                onPressed: () {},
-                style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF10375C), //const Color(0xFFE78F81),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(radius),
-                    )),
-                child: Text(
-                  'Gifts In',
-                  style: style.copyWith(fontWeight: FontWeight.bold,color : Colors.white),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+// // this is going to be deleted //https://colorhunt.co/palette/f4f6fff3c623eb831710375c
+//   Widget homeColumn(
+//       ThemeData theme, double radius, TextStyle style, BuildContext context) {
+//     return Scaffold(
+//       appBar: AppBar(
+//         leading: IconButton(
+//           icon: const Icon(Icons.account_circle),
+//           onPressed: () {},
+//         ),
+//         title: Text(
+//           'Celebratio',
+//           style: TextStyle(color: theme.primaryColor),
+//         ),
+//         actions: [
+//           ElevatedButton.icon(
+//             onPressed: () {},
+//             label: const Text('New Event'),
+//             icon: const Icon(Icons.add),
+//           ),
+//         ],
+//       ),
+//       body: Column(
+//         mainAxisSize: MainAxisSize.max,
+//         crossAxisAlignment: CrossAxisAlignment.stretch,
+//         children: [
+//           Padding(
+//             padding: const EdgeInsets.all(8.0),
+//             child: Text(
+//               '${getGreeting()}, Ahmed',
+//               style:
+//                   theme.textTheme.displaySmall?.copyWith(color: Colors.black54),
+//             ),
+//           ),
+//           Expanded(
+//             child: Padding(
+//               padding: const EdgeInsets.all(8.0),
+//               child: ElevatedButton(
+//                 onPressed: () {},
+//                 style: ElevatedButton.styleFrom(
+//                     backgroundColor: const Color(0xFF10375C),
+//                     //const Color(0xFFB7E0FF),
+//                     shape: RoundedRectangleBorder(
+//                       borderRadius: BorderRadius.circular(radius),
+//                     )),
+//                 child: Text(
+//                   'My Events',
+//                   style: style.copyWith(fontWeight: FontWeight.bold,color: Colors.white),
+//                 ),
+//               ),
+//             ),
+//           ),
+//           Expanded(
+//             child: Padding(
+//               padding: const EdgeInsets.all(8.0),
+//               child: ElevatedButton(
+//                 onPressed: () {
+//                   Navigator.pushNamed(context, '/Friends',
+//                       arguments: {'colorCode': '0xFFFFF5CD'});
+//                 },
+//                 style: ElevatedButton.styleFrom(
+//                     backgroundColor: const Color(0xFF10375C), // const Color(0xFFFFF5CD),
+//                     shape: RoundedRectangleBorder(
+//                       borderRadius: BorderRadius.circular(radius),
+//                     )),
+//                 child: Text(
+//                   'Friends',
+//                   style: style.copyWith(fontWeight: FontWeight.bold,color: Colors.white),
+//                 ),
+//               ),
+//             ),
+//           ),
+//           Expanded(
+//             child: Padding(
+//               padding: const EdgeInsets.all(8.0),
+//               child: ElevatedButton(
+//                 onPressed: () {},
+//                 style: ElevatedButton.styleFrom(
+//                     backgroundColor:const Color(0xFF10375C), //const Color(0xFFFFCFB3),
+//                     shape: RoundedRectangleBorder(
+//                       borderRadius: BorderRadius.circular(radius),
+//                     )),
+//                 child: Text(
+//                   'Gifts Out',
+//                   style: style.copyWith(fontWeight: FontWeight.bold, color: Colors.white),
+//                 ),
+//               ),
+//             ),
+//           ),
+//           Expanded(
+//             child: Padding(
+//               padding: const EdgeInsets.all(8.0),
+//               child: ElevatedButton(
+//                 onPressed: () {},
+//                 style: ElevatedButton.styleFrom(
+//                     backgroundColor: const Color(0xFF10375C), //const Color(0xFFE78F81),
+//                     shape: RoundedRectangleBorder(
+//                       borderRadius: BorderRadius.circular(radius),
+//                     )),
+//                 child: Text(
+//                   'Gifts In',
+//                   style: style.copyWith(fontWeight: FontWeight.bold,color : Colors.white),
+//                 ),
+//               ),
+//             ),
+//           ),
+//         ],
+//       ),
+//     );
+//   }
 }
