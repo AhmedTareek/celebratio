@@ -30,8 +30,6 @@ class _EventDetailsState extends State<EventDetails> {
       }
       _sortGifts(); // Apply sorting after filtering
     });
-    print("All Gifts $allGifts");
-    print("Filtered Gifts $filteredGifts");
   }
 
   void _sortGifts() {
@@ -98,23 +96,26 @@ class _EventDetailsState extends State<EventDetails> {
             }),
       ],
       sortOptions: [
-        SortOption(label: 'Name', onSelected: () {
-          setState(() {
-            sortType = "Name";
-            _filterGifts();
-          });
-        }),
-        SortOption(label: 'category', onSelected: () {
-          setState(() {
-            sortType = "Category";
-            _filterGifts();
-          });
-        }),
+        SortOption(
+            label: 'Name',
+            onSelected: () {
+              setState(() {
+                sortType = "Name";
+                _filterGifts();
+              });
+            }),
+        SortOption(
+            label: 'category',
+            onSelected: () {
+              setState(() {
+                sortType = "Category";
+                _filterGifts();
+              });
+            }),
       ],
-      onClearSortOptionsSelected: (){
+      onClearSortOptionsSelected: () {
         setState(() {
           sortType = "";
-          print(sortType);
           _filterGifts();
         });
       },
