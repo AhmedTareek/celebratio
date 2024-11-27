@@ -12,106 +12,61 @@ class _EventState extends State<Events> {
   int selectedButtonIndex = 0;
   final DateTime today = DateTime.now();
   final List<Map<String, dynamic>> allEvents = [
-    // Example events with name and date
+    // Examples events with name, date, category, location and description
+
+    {
+      "name": "Ahmed Birthday",
+      "date": DateTime(2024, 11, 5),
+      "category": "Birthday",
+      "location": "Cairo",
+      "description": "Ahmed's birthday at Cairo"
+    },
+    {
+      "name": "Sara Birthday",
+      "date": DateTime(2024, 11, 15),
+      "category": "Birthday",
+      "location": "Cairo",
+      "description": "Sara's birthday at Cairo"
+    },
+
+    {
+      "name": "Ahmed Wedding",
+      "date": DateTime(2024, 11, 10),
+      "category": "Wedding",
+      "location": "Cairo",
+      "description": "Ahmed's wedding at Cairo"
+    },
+
     {
       "name": "Sara Wedding",
       "date": DateTime(2024, 11, 20),
-      "Category": "Wedding"
+      "category": "Wedding",
+      "location": "Cairo",
+      "description": "Sara's wedding at Cairo"
     },
-    {
-      "name": "Birthday Party",
-      "date": DateTime(2024, 10, 20),
-      "Category": "Party"
-    },
-    {
-      "name": "Graduation Ceremony",
-      "date": DateTime(2024, 12, 20),
-      "Category": "Graduation"
-    },
-    {
-      "name": "Wedding Anniversary",
-      "date": DateTime(2024, 11, 20),
-      "Category": "Anniversary"
-    },
-    {
-      "name": "Baby Shower",
-      "date": DateTime(2024, 10, 20),
-      "Category": "Baby Shower"
-    },
-    {
-      "name": "Farewell Party",
-      "date": DateTime(2024, 12, 20),
-      "Category": "Party"
-    },
-    {
-      "name": "House Warming",
-      "date": DateTime(2024, 11, 20),
-      "Category": "House Warming"
-    },
-    {
-      "name": "Engagement Party",
-      "date": DateTime(2024, 10, 20),
-      "Category": "Party"
-    },
-    {"name": "Prom Night", "date": DateTime(2024, 12, 20), "Category": "Prom"},
-    {"name": "Reunion", "date": DateTime(2024, 11, 20), "Category": "Reunion"},
-    {
-      "name": "Retirement Party",
-      "date": DateTime(2024, 10, 20),
-      "Category": "Party"
-    },
-    {
-      "name": "Bachelor Party",
-      "date": DateTime(2024, 12, 20),
-      "Category": "Party"
-    },
-    {
-      "name": "Bridal Shower",
-      "date": DateTime(2024, 11, 20),
-      "Category": "Bridal"
-    },
-    {
-      "name": "Naming Ceremony",
-      "date": DateTime(2024, 10, 20),
-      "Category": "Naming"
-    },
-    {
-      "name": "House Party",
-      "date": DateTime(2024, 12, 20),
-      "Category": "Party"
-    },
-    {
-      "name": "Christmas Party",
-      "date": DateTime(2024, 11, 20),
-      "Category": "Party"
-    },
-    {
-      "name": "New Year Party",
-      "date": DateTime(2024, 10, 20),
-      "Category": "New Year"
-    },
-    {
-      "name": "Halloween Party",
-      "date": DateTime(2024, 12, 20),
-      "Category": "Halloween"
-    },
-
     {
       "name": "Today's Event",
       "date": DateTime(
           DateTime.now().year, DateTime.now().month, DateTime.now().day),
-      "Category": "Today"
+      "category": "Today",
+      "location": "Cairo",
+      "description": "Today's event at Cairo"
     },
     {
       "name": "Upcoming Event",
       "date": DateTime(2024, 12, 5),
-      "Category": "Upcoming"
+      "category": "Upcoming",
+      "location": "Cairo",
+      "description": "Upcoming event at Cairo"
     },
     {
       "name": "A past Event",
       "date": DateTime(2024, 11, 15),
-      "Category": "Anniversary"
+      "category": "Anniversary",
+      "location": "Cairo",
+      "description": "Past event at Cairo"
     },
+
   ];
   List<Map<String, dynamic>> filteredEvents = [];
   String sortType = "";
@@ -147,7 +102,7 @@ class _EventState extends State<Events> {
   void _sortEvents() {
     setState(() {
       if (sortType == "Category") {
-        filteredEvents.sort((a, b) => a['Category'].compareTo(b['Category']));
+        filteredEvents.sort((a, b) => a['category'].compareTo(b['category']));
       } else if (sortType == "Name") {
         filteredEvents.sort((a, b) => a['name'].compareTo(b['name']));
       }
@@ -181,7 +136,114 @@ class _EventState extends State<Events> {
     );
   }
 
+  void _addNewEvent() {
+    final TextEditingController nameController = TextEditingController();
+    final TextEditingController locationController = TextEditingController();
+    final TextEditingController descriptionController = TextEditingController();
+    final TextEditingController categoryController = TextEditingController();
+    DateTime? selectedDate;
 
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Add New Event'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: nameController,
+                  decoration: InputDecoration(
+                    labelText: 'Event Name',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                SizedBox(height: 10),
+                ElevatedButton(
+                  onPressed: () async {
+                    DateTime? pickedDate = await showDatePicker(
+                      context: context,
+                      initialDate: DateTime.now(),
+                      firstDate: DateTime(2000),
+                      lastDate: DateTime(2100),
+                    );
+                    if (pickedDate != null) {
+                      selectedDate = pickedDate;
+                    }
+                  },
+                  child: Text(
+                    selectedDate == null
+                        ? 'Select Event Date'
+                        : 'Date: ${selectedDate!.toLocal()}'.split(' ')[0],
+                  ),
+                ),
+                SizedBox(height: 10),
+                TextField(
+                  controller: locationController,
+                  decoration: InputDecoration(
+                    labelText: 'Location',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                SizedBox(height: 10),
+                TextField(
+                  controller: descriptionController,
+                  decoration: InputDecoration(
+                    labelText: 'Description',
+                    border: OutlineInputBorder(),
+                  ),
+                  maxLines: 3,
+                ),
+                SizedBox(height: 10),
+                TextField(
+                  controller: categoryController,
+                  decoration: InputDecoration(
+                    labelText: 'Category',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context); // Close the dialog without adding
+              },
+              child: Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                if (nameController.text.isNotEmpty &&
+                    selectedDate != null &&
+                    locationController.text.isNotEmpty &&
+                    descriptionController.text.isNotEmpty &&
+                    categoryController.text.isNotEmpty) {
+                  setState(() {
+                    allEvents.add({
+                      "name": nameController.text,
+                      "date": selectedDate!,
+                      "location": locationController.text,
+                      "description": descriptionController.text,
+                      "category": categoryController.text,
+                    });
+                    _filterEvents(); // Refresh the filtered list
+                  });
+                  Navigator.pop(context); // Close the dialog
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Please fill all fields')),
+                  );
+                }
+              },
+              child: Text('Add'),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
   @override
   void initState() {
@@ -193,7 +255,7 @@ class _EventState extends State<Events> {
   Widget build(BuildContext context) {
     return CustomWidget(
         newButton: NewButton(label: 'New Event', onPressed: () {
-          // Add new event
+          _addNewEvent();
         }),
         filterButtons: [
           FilterButton(
