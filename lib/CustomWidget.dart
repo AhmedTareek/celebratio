@@ -4,6 +4,8 @@ class CustomWidget extends StatefulWidget {
   final Widget? topWidget;
   final List<FilterButton> filterButtons;
   final List<SortOption> sortOptions;
+  final VoidCallback? onClearSortOptionsSelected;
+
   final Widget Function(BuildContext, int) tileBuilder;
   final int itemCount;
   final String title;
@@ -23,6 +25,7 @@ class CustomWidget extends StatefulWidget {
     required this.sortOptions,
     required this.tileBuilder,
     required this.itemCount,
+    this.onClearSortOptionsSelected,
     this.topWidget,
     this.newButton,
     this.title = 'Events',
@@ -204,6 +207,7 @@ class _CustomWidgetState extends State<CustomWidget> {
             widget.sortOptions[selectedOption].onSelected?.call();
           } else {
             selectedButtonIndex = null;
+            widget.onClearSortOptionsSelected?.call();
           }
         });
       }
@@ -237,11 +241,13 @@ class NewButton {
 class CustomSortDialog extends StatefulWidget {
   final List<SortOption> sortOptions;
   final int? initialSelection;
+  final VoidCallback? onClearSortOptionsSelected;
 
   const CustomSortDialog({
     super.key,
     required this.sortOptions,
     this.initialSelection,
+    this.onClearSortOptionsSelected,
   });
 
   @override
