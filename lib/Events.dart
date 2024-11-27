@@ -13,16 +13,108 @@ class _EventState extends State<Events> {
   final DateTime today = DateTime.now();
   final List<Map<String, dynamic>> allEvents = [
     // Example events with name and date
-    {"name": "Past Event", "date": DateTime(2024, 11, 20)},
+    {
+      "name": "Sara Wedding",
+      "date": DateTime(2024, 11, 20),
+      "Category": "Wedding"
+    },
+    {
+      "name": "Birthday Party",
+      "date": DateTime(2024, 10, 20),
+      "Category": "Party"
+    },
+    {
+      "name": "Graduation Ceremony",
+      "date": DateTime(2024, 12, 20),
+      "Category": "Graduation"
+    },
+    {
+      "name": "Wedding Anniversary",
+      "date": DateTime(2024, 11, 20),
+      "Category": "Anniversary"
+    },
+    {
+      "name": "Baby Shower",
+      "date": DateTime(2024, 10, 20),
+      "Category": "Baby Shower"
+    },
+    {
+      "name": "Farewell Party",
+      "date": DateTime(2024, 12, 20),
+      "Category": "Party"
+    },
+    {
+      "name": "House Warming",
+      "date": DateTime(2024, 11, 20),
+      "Category": "House Warming"
+    },
+    {
+      "name": "Engagement Party",
+      "date": DateTime(2024, 10, 20),
+      "Category": "Party"
+    },
+    {"name": "Prom Night", "date": DateTime(2024, 12, 20), "Category": "Prom"},
+    {"name": "Reunion", "date": DateTime(2024, 11, 20), "Category": "Reunion"},
+    {
+      "name": "Retirement Party",
+      "date": DateTime(2024, 10, 20),
+      "Category": "Party"
+    },
+    {
+      "name": "Bachelor Party",
+      "date": DateTime(2024, 12, 20),
+      "Category": "Party"
+    },
+    {
+      "name": "Bridal Shower",
+      "date": DateTime(2024, 11, 20),
+      "Category": "Bridal"
+    },
+    {
+      "name": "Naming Ceremony",
+      "date": DateTime(2024, 10, 20),
+      "Category": "Naming"
+    },
+    {
+      "name": "House Party",
+      "date": DateTime(2024, 12, 20),
+      "Category": "Party"
+    },
+    {
+      "name": "Christmas Party",
+      "date": DateTime(2024, 11, 20),
+      "Category": "Party"
+    },
+    {
+      "name": "New Year Party",
+      "date": DateTime(2024, 10, 20),
+      "Category": "New Year"
+    },
+    {
+      "name": "Halloween Party",
+      "date": DateTime(2024, 12, 20),
+      "Category": "Halloween"
+    },
+
     {
       "name": "Today's Event",
       "date": DateTime(
-          DateTime.now().year, DateTime.now().month, DateTime.now().day)
+          DateTime.now().year, DateTime.now().month, DateTime.now().day),
+      "Category": "Today"
     },
-    {"name": "Upcoming Event", "date": DateTime(2024, 12, 5)},
-    {"name": "A past Event", "date": DateTime(2024, 11, 15)},
+    {
+      "name": "Upcoming Event",
+      "date": DateTime(2024, 12, 5),
+      "Category": "Upcoming"
+    },
+    {
+      "name": "A past Event",
+      "date": DateTime(2024, 11, 15),
+      "Category": "Anniversary"
+    },
   ];
   List<Map<String, dynamic>> filteredEvents = [];
+  String sortType = "";
 
   void _filterEvents() {
     setState(() {
@@ -48,8 +140,20 @@ class _EventState extends State<Events> {
         filteredEvents =
             allEvents.where((event) => event['date'].isAfter(today)).toList();
       }
+      _sortEvents(); // Apply sorting after filtering
     });
   }
+
+  void _sortEvents() {
+    setState(() {
+      if (sortType == "Category") {
+        filteredEvents.sort((a, b) => a['Category'].compareTo(b['Category']));
+      } else if (sortType == "Name") {
+        filteredEvents.sort((a, b) => a['name'].compareTo(b['name']));
+      }
+    });
+  }
+
   void _showOptionsDialog(int index) {
     showModalBottomSheet(
       context: context,
@@ -77,6 +181,8 @@ class _EventState extends State<Events> {
     );
   }
 
+
+
   @override
   void initState() {
     super.initState();
@@ -86,7 +192,9 @@ class _EventState extends State<Events> {
   @override
   Widget build(BuildContext context) {
     return CustomWidget(
-        newButton: NewButton(label: 'New Event', onPressed: () {}),
+        newButton: NewButton(label: 'New Event', onPressed: () {
+          // Add new event
+        }),
         filterButtons: [
           FilterButton(
               label: 'Past',
@@ -114,7 +222,20 @@ class _EventState extends State<Events> {
             },
           ),
         ],
-        sortOptions: [SortOption(label: 'Name'), SortOption(label: 'Category')],
+        sortOptions: [
+          SortOption(
+              label: 'Name',
+              onSelected: () {
+                sortType = 'Name';
+                _sortEvents();
+              }),
+          SortOption(
+              label: 'Category',
+              onSelected: () {
+                sortType = 'Category';
+                _sortEvents();
+              })
+        ],
         tileBuilder: (context, index) {
           final formatter = DateFormat('yyyy-MM-dd');
           final event = filteredEvents[index];
