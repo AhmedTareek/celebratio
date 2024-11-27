@@ -15,9 +15,50 @@ class EventDetails extends StatefulWidget {
 }
 
 class _EventDetailsState extends State<EventDetails> {
+  String selectedFilter = 'All'; // Tracks the current filter
+  List<Map<String, dynamic>> allGifts = []; // Replace with your gifts data
+  List<Map<String, dynamic>> filteredGifts = [];
+  String sortType = "";
 
+  void _filterGifts() {
+    setState(() {
+      if (selectedFilter == 'All') {
+        filteredGifts = allGifts.toList();
+      } else {
+        filteredGifts =
+            allGifts.where((gift) => gift['status'] == selectedFilter).toList();
+      }
+      _sortGifts(); // Apply sorting after filtering
+    });
+    print("All Gifts $allGifts");
+    print("Filtered Gifts $filteredGifts");
+  }
 
+  void _sortGifts() {
+    setState(() {
+      if (sortType == "Category") {
+        filteredGifts.sort((a, b) => a['category'].compareTo(b['category']));
+      } else if (sortType == "Name") {
+        filteredGifts.sort((a, b) => a['name'].compareTo(b['name']));
+      }
+    });
+  }
 
+  @override
+  void initState() {
+    super.initState();
+    // Example gift data
+    allGifts = List.generate(
+      25,
+      (index) => {
+        "name": "Gift Name $index",
+        "status": index % 3 == 0 ? "Available" : "Pledged",
+        "pledgedBy": index % 3 != 0 ? "Sarah" : null,
+        "category": index % 2 == 0 ? "Electronics" : "Books",
+      },
+    );
+    _filterGifts(); // Initialize the filtered list
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -31,15 +72,54 @@ class _EventDetailsState extends State<EventDetails> {
           description: currentEvent.description,
           createdBy: 'createdBy'),
       filterButtons: [
-        FilterButton(label: 'All'),
-        FilterButton(label: 'Available'),
-        FilterButton(label: 'Pledged'),
+        FilterButton(
+            label: 'All',
+            onPressed: () {
+              setState(() {
+                selectedFilter = 'All';
+                _filterGifts();
+              });
+            }),
+        FilterButton(
+            label: 'Available',
+            onPressed: () {
+              setState(() {
+                selectedFilter = 'Available';
+                _filterGifts();
+              });
+            }),
+        FilterButton(
+            label: 'Pledged',
+            onPressed: () {
+              setState(() {
+                selectedFilter = 'Pledged';
+                _filterGifts();
+              });
+            }),
       ],
       sortOptions: [
-        SortOption(label: 'Name'),
-        SortOption(label: 'category'),
+        SortOption(label: 'Name', onSelected: () {
+          setState(() {
+            sortType = "Name";
+            _filterGifts();
+          });
+        }),
+        SortOption(label: 'category', onSelected: () {
+          setState(() {
+            sortType = "Category";
+            _filterGifts();
+          });
+        }),
       ],
+      onClearSortOptionsSelected: (){
+        setState(() {
+          sortType = "";
+          print(sortType);
+          _filterGifts();
+        });
+      },
       tileBuilder: (context, idx) {
+        final gift = filteredGifts[idx];
         return Padding(
           padding: const EdgeInsets.all(8.0),
           child: ListTile(
@@ -48,7 +128,7 @@ class _EventDetailsState extends State<EventDetails> {
                   MaterialPageRoute(builder: (context) => GiftDetails()));
             },
             onLongPress: () {
-              if (idx % 4 == 0) {
+              if (gift['status'] == 'Available') {
                 showModalBottomSheet(
                   context: context,
                   builder: (BuildContext context) {
@@ -75,22 +155,25 @@ class _EventDetailsState extends State<EventDetails> {
               }
             },
             title: Text(
-              'Gift Name $idx',
+              gift['name'],
             ),
-            subtitle: idx % 4 != 0 ? Text('Sarah pledged this gift') : null,
+            subtitle: gift['pledgedBy'] != null
+                ? Text('${gift['pledgedBy']} pledged this gift')
+                : null,
             trailing: Stack(
               alignment: Alignment.center,
               children: [
                 CircleAvatar(
                   radius: 5,
-                  backgroundColor: idx % 4 == 0 ? Colors.green : Colors.red,
+                  backgroundColor:
+                      gift['status'] == 'Available' ? Colors.green : Colors.red,
                 ),
               ],
             ),
           ),
         );
       },
-      itemCount: 25,
+      itemCount: filteredGifts.length,
       newButton: NewButton(label: 'New Gift', onPressed: () {}),
     );
   }
