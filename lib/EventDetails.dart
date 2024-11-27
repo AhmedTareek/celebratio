@@ -1,11 +1,12 @@
+import 'package:celebratio/EventData.dart';
 import 'package:celebratio/GiftDetails.dart';
 import 'package:flutter/material.dart';
 import 'CustomWidget.dart';
 
 class EventDetails extends StatefulWidget {
-  final String eventName;
+  final EventData eventData;
 
-  const EventDetails({super.key, required this.eventName});
+  const EventDetails({super.key, required this.eventData});
 
   @override
   State<StatefulWidget> createState() {
@@ -14,15 +15,20 @@ class EventDetails extends StatefulWidget {
 }
 
 class _EventDetailsState extends State<EventDetails> {
+
+
+
+
   @override
   Widget build(BuildContext context) {
+    var currentEvent = widget.eventData;
     return CustomWidget(
-      title: widget.eventName,
+      title: currentEvent.name,
       topWidget: EventCard(
-          name: 'ww',
-          location: 'location',
-          date: 'date',
-          description: 'description',
+          name: currentEvent.name,
+          location: currentEvent.location,
+          date: currentEvent.date.toString(),
+          description: currentEvent.description,
           createdBy: 'createdBy'),
       filterButtons: [
         FilterButton(label: 'All'),
@@ -37,17 +43,17 @@ class _EventDetailsState extends State<EventDetails> {
         return Padding(
           padding: const EdgeInsets.all(8.0),
           child: ListTile(
-            onTap: (){
-              Navigator.push(context, MaterialPageRoute(builder: (context) => GiftDetails()));
+            onTap: () {
+              Navigator.push(context,
+                  MaterialPageRoute(builder: (context) => GiftDetails()));
             },
-            onLongPress: (){
-              if(idx%4==0) {
+            onLongPress: () {
+              if (idx % 4 == 0) {
                 showModalBottomSheet(
                   context: context,
                   builder: (BuildContext context) {
                     return Wrap(
                       children: <Widget>[
-
                         ListTile(
                           leading: Icon(Icons.edit),
                           title: Text('Edit'),
@@ -55,7 +61,6 @@ class _EventDetailsState extends State<EventDetails> {
                             Navigator.pop(context);
                           },
                         ),
-
                         ListTile(
                           leading: Icon(Icons.delete),
                           title: Text('Delete'),
@@ -69,23 +74,24 @@ class _EventDetailsState extends State<EventDetails> {
                 );
               }
             },
-            title: Text('Gift Name $idx',),
-            subtitle: idx%4!=0?Text('Sarah pledged this gift'):null,
+            title: Text(
+              'Gift Name $idx',
+            ),
+            subtitle: idx % 4 != 0 ? Text('Sarah pledged this gift') : null,
             trailing: Stack(
               alignment: Alignment.center,
               children: [
                 CircleAvatar(
                   radius: 5,
-                  backgroundColor: idx%4==0?Colors.green:Colors.red,
+                  backgroundColor: idx % 4 == 0 ? Colors.green : Colors.red,
                 ),
-
               ],
             ),
           ),
         );
       },
       itemCount: 25,
-      newButton: NewButton(label: 'New Gift',onPressed: (){}),
+      newButton: NewButton(label: 'New Gift', onPressed: () {}),
     );
   }
 }

@@ -1,4 +1,5 @@
 import 'package:celebratio/CustomWidget.dart';
+import 'package:celebratio/EventData.dart';
 import 'package:celebratio/EventDetails.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -19,14 +20,16 @@ class _EventState extends State<EventsPage> {
       "date": DateTime(2024, 11, 5),
       "category": "Birthday",
       "location": "Cairo",
-      "description": "Ahmed's birthday at Cairo"
+      "description": "Ahmed's birthday at Cairo",
+      "id": 1
     },
     {
       "name": "Sara Birthday",
       "date": DateTime(2024, 11, 15),
       "category": "Birthday",
       "location": "Cairo",
-      "description": "Sara's birthday at Cairo"
+      "description": "Sara's birthday at Cairo",
+      "id": 2
     },
 
     {
@@ -34,7 +37,8 @@ class _EventState extends State<EventsPage> {
       "date": DateTime(2024, 11, 10),
       "category": "Wedding",
       "location": "Cairo",
-      "description": "Ahmed's wedding at Cairo"
+      "description": "Ahmed's wedding at Cairo",
+      "id": 3
     },
 
     {
@@ -42,7 +46,8 @@ class _EventState extends State<EventsPage> {
       "date": DateTime(2024, 11, 20),
       "category": "Wedding",
       "location": "Cairo",
-      "description": "Sara's wedding at Cairo"
+      "description": "Sara's wedding at Cairo",
+      "id": 4
     },
     {
       "name": "Today's Event",
@@ -50,23 +55,25 @@ class _EventState extends State<EventsPage> {
           DateTime.now().year, DateTime.now().month, DateTime.now().day),
       "category": "Today",
       "location": "Cairo",
-      "description": "Today's event at Cairo"
+      "description": "Today's event at Cairo",
+      "id": 5
     },
     {
       "name": "Upcoming Event",
       "date": DateTime(2024, 12, 5),
       "category": "Upcoming",
       "location": "Cairo",
-      "description": "Upcoming event at Cairo"
+      "description": "Upcoming event at Cairo",
+      "id": 6
     },
     {
       "name": "A past Event",
       "date": DateTime(2024, 11, 15),
       "category": "Anniversary",
       "location": "Cairo",
-      "description": "Past event at Cairo"
+      "description": "Past event at Cairo",
+      "id": 7
     },
-
   ];
   List<Map<String, dynamic>> filteredEvents = [];
   String sortType = "";
@@ -254,9 +261,11 @@ class _EventState extends State<EventsPage> {
   @override
   Widget build(BuildContext context) {
     return CustomWidget(
-        newButton: NewButton(label: 'New Event', onPressed: () {
-          _addNewEvent();
-        }),
+        newButton: NewButton(
+            label: 'New Event',
+            onPressed: () {
+              _addNewEvent();
+            }),
         filterButtons: [
           FilterButton(
               label: 'Past',
@@ -306,8 +315,9 @@ class _EventState extends State<EventsPage> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) =>
-                      EventDetails(eventName: event['name']),
+                  builder: (context) => EventDetails(
+                    eventData: EventData.fromJson(event),
+                  ),
                 ),
               );
             },
