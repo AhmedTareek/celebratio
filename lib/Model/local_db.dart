@@ -1,4 +1,5 @@
 import 'package:celebratio/Model/event.dart';
+import 'package:celebratio/Model/user.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 
@@ -16,23 +17,22 @@ class DataBase {
 
   static const _version = 1;
 
-
   initialize() async {
-    await dropDatabase();
+    // await dropDatabase();
     String myPath = await getDatabasesPath();
     String path = join(myPath, 'celebratio.db');
     Database myDB = await openDatabase(path, version: _version,
         onCreate: (db, version) async {
-          // Create Users table
-          await db.execute('''CREATE TABLE IF NOT EXISTS users (
+      // Create Users table
+      await db.execute('''CREATE TABLE IF NOT EXISTS users (
           id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
           name TEXT NOT NULL,
           email TEXT NOT NULL,
           preferences TEXT
       )''');
 
-          // Create Events table with foreign key referencing Users
-          await db.execute('''CREATE TABLE IF NOT EXISTS events (
+      // Create Events table with foreign key referencing Users
+      await db.execute('''CREATE TABLE IF NOT EXISTS events (
           id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
           name TEXT NOT NULL,
           description TEXT NOT NULL,
@@ -43,8 +43,8 @@ class DataBase {
           FOREIGN KEY (userId) REFERENCES users (id) ON DELETE CASCADE
       )''');
 
-          // Create Gifts table with foreign key referencing Events
-          await db.execute('''CREATE TABLE IF NOT EXISTS gifts (
+      // Create Gifts table with foreign key referencing Events
+      await db.execute('''CREATE TABLE IF NOT EXISTS gifts (
           id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
           name TEXT NOT NULL,
           description TEXT NOT NULL,
@@ -55,8 +55,8 @@ class DataBase {
           FOREIGN KEY (eventId) REFERENCES events (id) ON DELETE CASCADE
       )''');
 
-          // Create Friends table with foreign keys referencing Users
-          await db.execute('''CREATE TABLE IF NOT EXISTS friends (
+      // Create Friends table with foreign keys referencing Users
+      await db.execute('''CREATE TABLE IF NOT EXISTS friends (
           userId INTEGER NOT NULL,
           friendId INTEGER NOT NULL,
           PRIMARY KEY (userId, friendId),
@@ -64,9 +64,8 @@ class DataBase {
           FOREIGN KEY (friendId) REFERENCES users (id) ON DELETE CASCADE
       )''');
 
-          print("Database has been created with proper foreign keys.");
-        },
-    onConfigure: (db) async {
+      print("Database has been created with proper foreign keys.");
+    }, onConfigure: (db) async {
       await db.execute('PRAGMA foreign_keys = ON');
     });
     return myDB;
@@ -80,9 +79,12 @@ class DataBase {
     print("Old database dropped successfully.");
   }
 
+  // Event functions
+
   deleteEventById(int id) async {
     Database? myData = await myDataBase;
-    int response = await myData!.delete('events', where: 'id = ?', whereArgs: [id]);
+    int response =
+        await myData!.delete('events', where: 'id = ?', whereArgs: [id]);
     return response;
   }
 
@@ -99,6 +101,14 @@ class DataBase {
     return events;
   }
 
+  getEventsByUserId(int id) async {
+    Database? myData = await myDataBase;
+    var response =
+        await myData!.query('events', where: 'userId = ?', whereArgs: [id]);
+    List<Event> events = response.map((e) => Event.fromJson(e)).toList();
+    return events;
+  }
+
   updateEvent(Event event) async {
     final db = await myDataBase;
     await db!.update(
@@ -109,4 +119,18 @@ class DataBase {
     );
   }
 
+  // User functions
+
+  insertNewUser(User userData) async {
+    Database? myData = await myDataBase;
+    int response = await myData!.insert('users', userData.toMap());
+    return response;
+  }
+
+  getAllUsers() async {
+    Database? myData = await myDataBase;
+    List<Map<String, dynamic>> response = await myData!.query('users');
+    List<User> users = response.map((e) => User.fromJson(e)).toList();
+    return users;
+  }
 }
