@@ -3,115 +3,65 @@ import 'package:celebratio/EventData.dart';
 import 'package:celebratio/EventDetails.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:sqflite/sqflite.dart';
+
+import 'edit_event_page.dart';
+import 'local_db.dart';
 
 class EventsPage extends StatefulWidget {
+  const EventsPage({super.key});
+
   @override
   State<EventsPage> createState() => _EventState();
 }
 
 class _EventState extends State<EventsPage> {
+  final db = DataBase();
   int selectedButtonIndex = 0;
   final DateTime today = DateTime.now();
-  final List<Map<String, dynamic>> allEvents = [
-    // Examples events with name, date, category, location and description
 
-    {
-      "name": "Ahmed Birthday",
-      "date": DateTime(2024, 11, 5),
-      "category": "Birthday",
-      "location": "Cairo",
-      "description": "Ahmed's birthday at Cairo",
-      "id": 1
-    },
-    {
-      "name": "Sara Birthday",
-      "date": DateTime(2024, 11, 15),
-      "category": "Birthday",
-      "location": "Cairo",
-      "description": "Sara's birthday at Cairo",
-      "id": 2
-    },
+  // List<Map<String, dynamic>> allEvents = [];
+  List<EventData> filteredEvents = [];
+  List<EventData> allEvents = [];
 
-    {
-      "name": "Ahmed Wedding",
-      "date": DateTime(2024, 11, 10),
-      "category": "Wedding",
-      "location": "Cairo",
-      "description": "Ahmed's wedding at Cairo",
-      "id": 3
-    },
+  Future<void> fetchEvents() async {
+    try {
+      var temp = await db.getAllEvents();
+      setState(() {
+        allEvents = List<EventData>.from(temp);
+        _filterEvents();
+      });
+    } catch (e) {
+      // print('Error fetching events: $e');
+    }
+  }
 
-    {
-      "name": "Sara Wedding",
-      "date": DateTime(2024, 11, 20),
-      "category": "Wedding",
-      "location": "Cairo",
-      "description": "Sara's wedding at Cairo",
-      "id": 4
-    },
-    {
-      "name": "Today's Event",
-      "date": DateTime(
-          DateTime.now().year, DateTime.now().month, DateTime.now().day),
-      "category": "Today",
-      "location": "Cairo",
-      "description": "Today's event at Cairo",
-      "id": 5
-    },
-    {
-      "name": "Upcoming Event",
-      "date": DateTime(2024, 12, 5),
-      "category": "Upcoming",
-      "location": "Cairo",
-      "description": "Upcoming event at Cairo",
-      "id": 6
-    },
-    {
-      "name": "A past Event",
-      "date": DateTime(2024, 11, 15),
-      "category": "Anniversary",
-      "location": "Cairo",
-      "description": "Past event at Cairo",
-      "id": 7
-    },
-  ];
-  List<Map<String, dynamic>> filteredEvents = [];
   String sortType = "";
 
   void _filterEvents() {
     setState(() {
-      if (selectedButtonIndex == 0) {
-        // Past
-        filteredEvents = allEvents
-            .where((event) =>
-                event['date'].isBefore(today) &&
-                !(event['date'].year == today.year &&
-                    event['date'].month == today.month &&
-                    event['date'].day == today.day))
-            .toList();
-      } else if (selectedButtonIndex == 1) {
-        // Current
-        filteredEvents = allEvents
-            .where((event) =>
-                event['date'].year == today.year &&
-                event['date'].month == today.month &&
-                event['date'].day == today.day)
-            .toList();
-      } else if (selectedButtonIndex == 2) {
-        // Upcoming
-        filteredEvents =
-            allEvents.where((event) => event['date'].isAfter(today)).toList();
-      }
-      _sortEvents(); // Apply sorting after filtering
+      filteredEvents = allEvents.where((event) {
+        final date = event.date;
+        if (selectedButtonIndex == 0) {
+          return date.isBefore(today) && !_isSameDay(date, today);
+        } else if (selectedButtonIndex == 1) {
+          return _isSameDay(date, today);
+        }
+        return date.isAfter(today);
+      }).toList();
+      _sortEvents();
     });
   }
+
+  bool _isSameDay(DateTime a, DateTime b) =>
+      a.year == b.year && a.month == b.month && a.day == b.day;
 
   void _sortEvents() {
     setState(() {
       if (sortType == "Category") {
-        filteredEvents.sort((a, b) => a['category'].compareTo(b['category']));
+        filteredEvents.sort((a, b) => a.category.compareTo(b.category));
       } else if (sortType == "Name") {
-        filteredEvents.sort((a, b) => a['name'].compareTo(b['name']));
+        filteredEvents.sort((a, b) => a.category.compareTo(b.category));
       }
     });
   }
@@ -127,12 +77,27 @@ class _EventState extends State<EventsPage> {
               title: Text('Edit'),
               onTap: () {
                 Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => EditEventPage(event: filteredEvents[index]),
+                  ),
+                ).then((_) => fetchEvents()); // Refresh after editing
               },
             ),
             ListTile(
               leading: Icon(Icons.delete),
               title: Text('Delete'),
               onTap: () {
+                try {
+                  db.deleteEventById(filteredEvents[index].id!);
+                  allEvents.remove(filteredEvents[index]);
+                  setState(() {
+                    _filterEvents();
+                  });
+                } catch (e) {
+                  print('Error deleting event: $e');
+                }
                 print('deleted $index');
                 Navigator.pop(context);
               },
@@ -142,6 +107,115 @@ class _EventState extends State<EventsPage> {
       },
     );
   }
+
+  // void _addNewEvent() {
+  //   final TextEditingController nameController = TextEditingController();
+  //   final TextEditingController locationController = TextEditingController();
+  //   final TextEditingController descriptionController = TextEditingController();
+  //   final TextEditingController categoryController = TextEditingController();
+  //   DateTime? selectedDate;
+  //
+  //   showDialog(
+  //     context: context,
+  //     builder: (BuildContext context) {
+  //       return AlertDialog(
+  //         title: Text('Add New Event'),
+  //         content: SingleChildScrollView(
+  //           child: Column(
+  //             mainAxisSize: MainAxisSize.min,
+  //             children: [
+  //               TextField(
+  //                 controller: nameController,
+  //                 decoration: InputDecoration(
+  //                   labelText: 'Event Name',
+  //                   border: OutlineInputBorder(),
+  //                 ),
+  //               ),
+  //               SizedBox(height: 10),
+  //               ElevatedButton(
+  //                 onPressed: () async {
+  //                   DateTime? pickedDate = await showDatePicker(
+  //                     context: context,
+  //                     initialDate: DateTime.now(),
+  //                     firstDate: DateTime(2000),
+  //                     lastDate: DateTime(2100),
+  //                   );
+  //                   if (pickedDate != null) {
+  //                     selectedDate = pickedDate;
+  //                   }
+  //                 },
+  //                 child: Text(
+  //                   selectedDate == null
+  //                       ? 'Select Event Date'
+  //                       : 'Date: ${selectedDate!.toLocal()}'.split(' ')[0],
+  //                 ),
+  //               ),
+  //               SizedBox(height: 10),
+  //               TextField(
+  //                 controller: locationController,
+  //                 decoration: InputDecoration(
+  //                   labelText: 'Location',
+  //                   border: OutlineInputBorder(),
+  //                 ),
+  //               ),
+  //               SizedBox(height: 10),
+  //               TextField(
+  //                 controller: descriptionController,
+  //                 decoration: InputDecoration(
+  //                   labelText: 'Description',
+  //                   border: OutlineInputBorder(),
+  //                 ),
+  //                 maxLines: 3,
+  //               ),
+  //               SizedBox(height: 10),
+  //               TextField(
+  //                 controller: categoryController,
+  //                 decoration: InputDecoration(
+  //                   labelText: 'Category',
+  //                   border: OutlineInputBorder(),
+  //                 ),
+  //               ),
+  //             ],
+  //           ),
+  //         ),
+  //         actions: [
+  //           TextButton(
+  //             onPressed: () {
+  //               Navigator.pop(context); // Close the dialog without adding
+  //             },
+  //             child: Text('Cancel'),
+  //           ),
+  //           ElevatedButton(
+  //             onPressed: () {
+  //               if (nameController.text.isNotEmpty &&
+  //                   selectedDate != null &&
+  //                   locationController.text.isNotEmpty &&
+  //                   descriptionController.text.isNotEmpty &&
+  //                   categoryController.text.isNotEmpty) {
+  //                 setState(() {
+  //                   allEvents.add({
+  //                     "name": nameController.text,
+  //                     "date": selectedDate!,
+  //                     "location": locationController.text,
+  //                     "description": descriptionController.text,
+  //                     "category": categoryController.text,
+  //                   });
+  //                   _filterEvents(); // Refresh the filtered list
+  //                 });
+  //                 Navigator.pop(context); // Close the dialog
+  //               } else {
+  //                 ScaffoldMessenger.of(context).showSnackBar(
+  //                   SnackBar(content: Text('Please fill all fields')),
+  //                 );
+  //               }
+  //             },
+  //             child: Text('Add'),
+  //           ),
+  //         ],
+  //       );
+  //     },
+  //   );
+  // }
 
   void _addNewEvent() {
     final TextEditingController nameController = TextEditingController();
@@ -221,23 +295,42 @@ class _EventState extends State<EventsPage> {
               child: Text('Cancel'),
             ),
             ElevatedButton(
-              onPressed: () {
+              onPressed: () async {
                 if (nameController.text.isNotEmpty &&
                     selectedDate != null &&
                     locationController.text.isNotEmpty &&
                     descriptionController.text.isNotEmpty &&
                     categoryController.text.isNotEmpty) {
-                  setState(() {
-                    allEvents.add({
-                      "name": nameController.text,
-                      "date": selectedDate!,
-                      "location": locationController.text,
-                      "description": descriptionController.text,
-                      "category": categoryController.text,
-                    });
-                    _filterEvents(); // Refresh the filtered list
-                  });
-                  Navigator.pop(context); // Close the dialog
+                  try {
+                    var event = EventData(
+                        name: nameController.text,
+                        description: descriptionController.text,
+                        date: selectedDate!,
+                        location: locationController.text,
+                        category: categoryController.text);
+                    final response = await db.insertNewEvent(event);
+                    if (response > 0) {
+                      // Add to list if database insert was successful
+                      setState(() {
+                        allEvents.add(event);
+                        _filterEvents(); // Refresh the filtered list
+                      });
+                      Navigator.pop(context); // Close the dialog
+                      // Show success message
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Event added successfully')),
+                      );
+                    } else {
+                      throw Exception('Failed to insert data');
+                    }
+                  } catch (e) {
+                    print(e);
+                    // Show error message if database operation fails
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                          content: Text('Error adding event: ${e.toString()}')),
+                    );
+                  }
                 } else {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(content: Text('Please fill all fields')),
@@ -253,8 +346,9 @@ class _EventState extends State<EventsPage> {
   }
 
   @override
-  void initState() {
+  initState() {
     super.initState();
+    fetchEvents();
     _filterEvents(); // Initialize filtered events
   }
 
@@ -316,14 +410,14 @@ class _EventState extends State<EventsPage> {
                 context,
                 MaterialPageRoute(
                   builder: (context) => EventDetails(
-                    eventData: EventData.fromJson(event),
+                    eventData: event,
                   ),
                 ),
               );
             },
             onLongPress: () => _showOptionsDialog(index),
-            trailing: Text(formatter.format(event['date'])),
-            title: Text(event['name']),
+            trailing: Text(formatter.format(DateTime.parse(event.date.toString()))),
+            title: Text(event.name),
             subtitle: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
