@@ -1,5 +1,8 @@
 import 'package:celebratio/CustomWidget.dart';
+import 'package:celebratio/Model/local_db.dart';
 import 'package:flutter/material.dart';
+
+import 'Model/user.dart';
 
 class Friends extends StatefulWidget {
   const Friends({super.key});
@@ -9,24 +12,37 @@ class Friends extends StatefulWidget {
 }
 
 class _FriendsState extends State<Friends> {
+  final db = DataBase();
   final TextEditingController _searchController = TextEditingController();
-  List<String> allFriends = ["Alice", "Bob", "Charlie", "David"]; // Example data
-  List<String> filteredFriends = [];
+  List<User> allFriends = []; // Example data
+  List<User> filteredFriends = [];
 
-  void _filterFriends() {
+  _filterFriends() {
     String query = _searchController.text.toLowerCase();
     setState(() {
       filteredFriends = allFriends
-          .where((friend) => friend.toLowerCase().contains(query))
+          .where((friend) => friend.name.toLowerCase().contains(query))
           .toList();
     });
   }
 
+  _fetchFriends() async {
+    try {
+      var temp = await db.getAllUsers();
+      setState(() {
+        allFriends = List<User>.from(temp);
+        _filterFriends();
+      });
+    } catch (e) {
+      // print('Error fetching friends: $e');
+    }
+  }
 
   @override
   void initState() {
     super.initState();
-    filteredFriends = allFriends; // Initially display all friends
+    _fetchFriends();
+    filteredFriends = allFriends;
     _searchController.addListener(_filterFriends);
   }
 
@@ -39,8 +55,8 @@ class _FriendsState extends State<Friends> {
   @override
   Widget build(BuildContext context) {
     return CustomWidget(
-      title: 'My Friends',
-      newButton: NewButton(label: 'New Friend',onPressed: (){}),
+        title: 'My Friends',
+        newButton: NewButton(label: 'New Friend', onPressed: () {}),
         topWidget: Padding(
           padding: const EdgeInsets.all(10.0),
           child: TextField(
@@ -58,7 +74,7 @@ class _FriendsState extends State<Friends> {
         tileBuilder: (context, index) {
           return ListTile(
             leading: CircleAvatar(),
-            title: Text(filteredFriends[index]),
+            title: Text(filteredFriends[index].name),
             subtitle: const Text('Hello, I am using Celebratio'),
             trailing: Stack(
               alignment: Alignment.center,
@@ -80,9 +96,5 @@ class _FriendsState extends State<Friends> {
           );
         },
         itemCount: filteredFriends.length);
-
   }
-
 }
-
-
