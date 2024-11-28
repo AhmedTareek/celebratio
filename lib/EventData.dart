@@ -5,6 +5,7 @@ class EventData {
   String location;
   String category;
   int? id;
+  int? userId = 1;
 
   EventData(
       {required this.name,
@@ -12,6 +13,7 @@ class EventData {
       required this.date,
       required this.location,
       this.id,
+      this.userId,
       required this.category});
 
   EventData copyWith({
@@ -21,6 +23,7 @@ class EventData {
     String? location,
     String? category,
     int? id,
+    int? userId,
   }) {
     return EventData(
       name: name ?? this.name,
@@ -29,6 +32,7 @@ class EventData {
       location: location ?? this.location,
       category: category ?? this.category,
       id: id ?? this.id,
+      userId: userId ?? this.userId,
     );
   }
 
@@ -39,7 +43,8 @@ class EventData {
         date: DateTime.parse(json['date']),
         location: json['location'],
         category: json['category'],
-        id: json['id']);
+        id: json['id'],
+        userId: json['userId']);
   }
 
   Map<String, Object?> toMap() {
@@ -49,13 +54,14 @@ class EventData {
       'date': date.toString(),
       'location': location,
       'category': category,
-      'id': id
+      'id': id,
+      'userId': userId
     };
   }
 
   @override
   String toString() {
     return 'EventData{name: $name, description: $description,'
-        ' date: $date, location: $location, category: $category, id: $id}';
+        ' date: $date, location: $location, category: $category, id: $id, userId: $userId}';
   }
 }
