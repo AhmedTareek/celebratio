@@ -1,10 +1,10 @@
-import 'package:celebratio/EventData.dart';
+import 'package:celebratio/Model/event.dart';
 import 'package:celebratio/GiftDetails.dart';
 import 'package:flutter/material.dart';
 import 'CustomWidget.dart';
 
 class EventDetails extends StatefulWidget {
-  final EventData eventData;
+  final Event eventData;
 
   const EventDetails({super.key, required this.eventData});
 

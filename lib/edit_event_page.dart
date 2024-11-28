@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-import 'EventData.dart';
-import 'local_db.dart';
+import 'Model/event.dart';
+import 'Model/local_db.dart';
+
 class EditEventPage extends StatefulWidget {
-  final EventData event;
+  final Event event;
 
   const EditEventPage({super.key, required this.event});
 
@@ -33,12 +34,13 @@ class _EditEventPageState extends State<EditEventPage> {
   void _updateEvent() async {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
-      EventData updatedEvent = widget.event.copyWith(
+      Event updatedEvent = widget.event.copyWith(
         name: name,
         description: description,
         date: date,
         location: location,
         category: category,
+        id: widget.event.id,
       );
       await DataBase().updateEvent(updatedEvent); // Update in DB
       Navigator.pop(context); // Return to the previous screen
@@ -59,14 +61,15 @@ class _EditEventPageState extends State<EditEventPage> {
                 initialValue: name,
                 decoration: const InputDecoration(labelText: 'Name'),
                 onSaved: (value) => name = value!,
-                validator: (value) => value!.isEmpty ? 'Name cannot be empty' : null,
+                validator: (value) =>
+                    value!.isEmpty ? 'Name cannot be empty' : null,
               ),
               TextFormField(
                 initialValue: description,
                 decoration: const InputDecoration(labelText: 'Description'),
                 onSaved: (value) => description = value!,
                 validator: (value) =>
-                value!.isEmpty ? 'Description cannot be empty' : null,
+                    value!.isEmpty ? 'Description cannot be empty' : null,
               ),
               // Date picker field
               ListTile(
@@ -91,14 +94,14 @@ class _EditEventPageState extends State<EditEventPage> {
                 decoration: const InputDecoration(labelText: 'Location'),
                 onSaved: (value) => location = value!,
                 validator: (value) =>
-                value!.isEmpty ? 'Location cannot be empty' : null,
+                    value!.isEmpty ? 'Location cannot be empty' : null,
               ),
               TextFormField(
                 initialValue: category,
                 decoration: const InputDecoration(labelText: 'Category'),
                 onSaved: (value) => category = value!,
                 validator: (value) =>
-                value!.isEmpty ? 'Category cannot be empty' : null,
+                    value!.isEmpty ? 'Category cannot be empty' : null,
               ),
               const SizedBox(height: 20),
               ElevatedButton(

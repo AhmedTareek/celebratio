@@ -1,12 +1,11 @@
 import 'package:celebratio/CustomWidget.dart';
-import 'package:celebratio/EventData.dart';
+import 'package:celebratio/Model/event.dart';
 import 'package:celebratio/EventDetails.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:sqflite/sqflite.dart';
 
 import 'edit_event_page.dart';
-import 'local_db.dart';
+import 'Model/local_db.dart';
 
 class EventsPage extends StatefulWidget {
   const EventsPage({super.key});
@@ -18,25 +17,23 @@ class EventsPage extends StatefulWidget {
 class _EventState extends State<EventsPage> {
   final db = DataBase();
   int selectedButtonIndex = 0;
+  String sortType = "";
   final DateTime today = DateTime.now();
 
-  // List<Map<String, dynamic>> allEvents = [];
-  List<EventData> filteredEvents = [];
-  List<EventData> allEvents = [];
+  List<Event> filteredEvents = [];
+  List<Event> allEvents = [];
 
   Future<void> fetchEvents() async {
     try {
       var temp = await db.getAllEvents();
       setState(() {
-        allEvents = List<EventData>.from(temp);
+        allEvents = List<Event>.from(temp);
         _filterEvents();
       });
     } catch (e) {
       // print('Error fetching events: $e');
     }
   }
-
-  String sortType = "";
 
   void _filterEvents() {
     setState(() {
@@ -73,21 +70,22 @@ class _EventState extends State<EventsPage> {
         return Wrap(
           children: <Widget>[
             ListTile(
-              leading: Icon(Icons.edit),
-              title: Text('Edit'),
+              leading: const Icon(Icons.edit),
+              title: const Text('Edit'),
               onTap: () {
                 Navigator.pop(context);
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => EditEventPage(event: filteredEvents[index]),
+                    builder: (context) =>
+                        EditEventPage(event: filteredEvents[index]),
                   ),
                 ).then((_) => fetchEvents()); // Refresh after editing
               },
             ),
             ListTile(
-              leading: Icon(Icons.delete),
-              title: Text('Delete'),
+              leading: const Icon(Icons.delete),
+              title: const Text('Delete'),
               onTap: () {
                 try {
                   db.deleteEventById(filteredEvents[index].id!);
@@ -108,115 +106,6 @@ class _EventState extends State<EventsPage> {
     );
   }
 
-  // void _addNewEvent() {
-  //   final TextEditingController nameController = TextEditingController();
-  //   final TextEditingController locationController = TextEditingController();
-  //   final TextEditingController descriptionController = TextEditingController();
-  //   final TextEditingController categoryController = TextEditingController();
-  //   DateTime? selectedDate;
-  //
-  //   showDialog(
-  //     context: context,
-  //     builder: (BuildContext context) {
-  //       return AlertDialog(
-  //         title: Text('Add New Event'),
-  //         content: SingleChildScrollView(
-  //           child: Column(
-  //             mainAxisSize: MainAxisSize.min,
-  //             children: [
-  //               TextField(
-  //                 controller: nameController,
-  //                 decoration: InputDecoration(
-  //                   labelText: 'Event Name',
-  //                   border: OutlineInputBorder(),
-  //                 ),
-  //               ),
-  //               SizedBox(height: 10),
-  //               ElevatedButton(
-  //                 onPressed: () async {
-  //                   DateTime? pickedDate = await showDatePicker(
-  //                     context: context,
-  //                     initialDate: DateTime.now(),
-  //                     firstDate: DateTime(2000),
-  //                     lastDate: DateTime(2100),
-  //                   );
-  //                   if (pickedDate != null) {
-  //                     selectedDate = pickedDate;
-  //                   }
-  //                 },
-  //                 child: Text(
-  //                   selectedDate == null
-  //                       ? 'Select Event Date'
-  //                       : 'Date: ${selectedDate!.toLocal()}'.split(' ')[0],
-  //                 ),
-  //               ),
-  //               SizedBox(height: 10),
-  //               TextField(
-  //                 controller: locationController,
-  //                 decoration: InputDecoration(
-  //                   labelText: 'Location',
-  //                   border: OutlineInputBorder(),
-  //                 ),
-  //               ),
-  //               SizedBox(height: 10),
-  //               TextField(
-  //                 controller: descriptionController,
-  //                 decoration: InputDecoration(
-  //                   labelText: 'Description',
-  //                   border: OutlineInputBorder(),
-  //                 ),
-  //                 maxLines: 3,
-  //               ),
-  //               SizedBox(height: 10),
-  //               TextField(
-  //                 controller: categoryController,
-  //                 decoration: InputDecoration(
-  //                   labelText: 'Category',
-  //                   border: OutlineInputBorder(),
-  //                 ),
-  //               ),
-  //             ],
-  //           ),
-  //         ),
-  //         actions: [
-  //           TextButton(
-  //             onPressed: () {
-  //               Navigator.pop(context); // Close the dialog without adding
-  //             },
-  //             child: Text('Cancel'),
-  //           ),
-  //           ElevatedButton(
-  //             onPressed: () {
-  //               if (nameController.text.isNotEmpty &&
-  //                   selectedDate != null &&
-  //                   locationController.text.isNotEmpty &&
-  //                   descriptionController.text.isNotEmpty &&
-  //                   categoryController.text.isNotEmpty) {
-  //                 setState(() {
-  //                   allEvents.add({
-  //                     "name": nameController.text,
-  //                     "date": selectedDate!,
-  //                     "location": locationController.text,
-  //                     "description": descriptionController.text,
-  //                     "category": categoryController.text,
-  //                   });
-  //                   _filterEvents(); // Refresh the filtered list
-  //                 });
-  //                 Navigator.pop(context); // Close the dialog
-  //               } else {
-  //                 ScaffoldMessenger.of(context).showSnackBar(
-  //                   SnackBar(content: Text('Please fill all fields')),
-  //                 );
-  //               }
-  //             },
-  //             child: Text('Add'),
-  //           ),
-  //         ],
-  //       );
-  //     },
-  //   );
-  // }
-
   void _addNewEvent() {
     final TextEditingController nameController = TextEditingController();
     final TextEditingController locationController = TextEditingController();
@@ -228,19 +117,19 @@ class _EventState extends State<EventsPage> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Add New Event'),
+          title: const Text('Add New Event'),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 TextField(
                   controller: nameController,
-                  decoration: InputDecoration(
+                  decoration: const InputDecoration(
                     labelText: 'Event Name',
                     border: OutlineInputBorder(),
                   ),
                 ),
-                SizedBox(height: 10),
+                const SizedBox(height: 10),
                 ElevatedButton(
                   onPressed: () async {
                     DateTime? pickedDate = await showDatePicker(
@@ -302,13 +191,15 @@ class _EventState extends State<EventsPage> {
                     descriptionController.text.isNotEmpty &&
                     categoryController.text.isNotEmpty) {
                   try {
-                    var event = EventData(
+                    var event = Event(
                         name: nameController.text,
                         description: descriptionController.text,
                         date: selectedDate!,
                         location: locationController.text,
-                        category: categoryController.text);
+                        category: categoryController.text,
+                        userId: 1);
                     final response = await db.insertNewEvent(event);
+                    event.id = response;
                     if (response > 0) {
                       // Add to list if database insert was successful
                       setState(() {
@@ -416,144 +307,19 @@ class _EventState extends State<EventsPage> {
               );
             },
             onLongPress: () => _showOptionsDialog(index),
-            trailing: Text(formatter.format(DateTime.parse(event.date.toString()))),
+            trailing:
+                Text(formatter.format(DateTime.parse(event.date.toString()))),
             title: Text(event.name),
             subtitle: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Ahmed Tarek'),
-                Text('one line from the description ...')
+                Text(event.id.toString()),
+                Text(event.description,
+                    maxLines: 1, overflow: TextOverflow.ellipsis),
               ],
             ),
           );
         },
         itemCount: filteredEvents.length);
-  }
-}
-
-class SortDialog extends StatefulWidget {
-  final int? initialSelection;
-
-  const SortDialog({super.key, this.initialSelection});
-
-  @override
-  State<StatefulWidget> createState() {
-    return _SortDialogState();
-  }
-}
-
-class _SortDialogState extends State<SortDialog> {
-  int? selectedButtonIndex;
-
-  @override
-  void initState() {
-    super.initState();
-    selectedButtonIndex = widget.initialSelection;
-  }
-
-  void clearSelection() {
-    setState(() {
-      selectedButtonIndex = -1;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('Sort By'),
-      content:
-          const Text('Please choose one of the following options to sort by:'),
-      actions: [
-        // Using Wrap to handle multiple buttons
-        Wrap(
-          spacing: 8.0,
-          children: List.generate(2, (index) {
-            return TextButton(
-              onPressed: () {
-                setState(() {
-                  // Toggle selection
-                  selectedButtonIndex =
-                      selectedButtonIndex == index ? null : index;
-                });
-              },
-              style: ButtonStyle(
-                backgroundColor: WidgetStateProperty.all(
-                  selectedButtonIndex == index
-                      ? Theme.of(context)
-                          .primaryColorLight //Colors.blue.withOpacity(0.2)
-                      : Colors.transparent,
-                ),
-                // Add a nice ripple effect
-                overlayColor: WidgetStateProperty.all(
-                  Colors.blue.withOpacity(0.1),
-                ),
-                // Add padding for better touch target
-                padding: WidgetStateProperty.all(
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                ),
-                // Add shape for better visual appeal
-                shape: WidgetStateProperty.all(
-                  RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    side: BorderSide(
-                      color: selectedButtonIndex == index
-                          ? Colors.blue
-                          : Colors.transparent,
-                    ),
-                  ),
-                ),
-              ),
-              child: Text(
-                index == 0 ? 'Name' : 'Category',
-                style: TextStyle(
-                  color: selectedButtonIndex == index
-                      ? Colors.blue
-                      : Theme.of(context).textTheme.bodyLarge?.color,
-                ),
-              ),
-            );
-          }),
-        ),
-        const SizedBox(height: 8),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            TextButton.icon(
-              onPressed: selectedButtonIndex != null ? clearSelection : null,
-              icon: const Icon(Icons.clear_all),
-              label: const Text('Clear'),
-              style: ButtonStyle(
-                // Disable the button when nothing is selected
-                foregroundColor: WidgetStateProperty.resolveWith<Color>(
-                  (Set<WidgetState> states) {
-                    if (states.contains(WidgetState.disabled)) {
-                      return Colors.grey;
-                    }
-                    return Colors.red; // Red color when enabled
-                  },
-                ),
-              ),
-            ),
-            Row(
-              children: [
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(context).pop(null);
-                  },
-                  child: const Text('Cancel'),
-                ),
-                TextButton(
-                  onPressed: () {
-                    // Handle the selection
-                    Navigator.of(context).pop(selectedButtonIndex);
-                  },
-                  child: const Text('Confirm'),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ],
-    );
   }
 }
