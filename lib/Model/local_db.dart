@@ -1,4 +1,4 @@
-import 'package:celebratio/EventData.dart';
+import 'package:celebratio/Model/event.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 
@@ -86,7 +86,7 @@ class DataBase {
     return response;
   }
 
-  insertNewEvent(EventData eventData) async {
+  insertNewEvent(Event eventData) async {
     Database? myData = await myDataBase;
     int response = await myData!.insert('events', eventData.toMap());
     return response;
@@ -95,11 +95,11 @@ class DataBase {
   getAllEvents() async {
     Database? myData = await myDataBase;
     List<Map<String, dynamic>> response = await myData!.query('events');
-    List<EventData> events = response.map((e) => EventData.fromJson(e)).toList();
+    List<Event> events = response.map((e) => Event.fromJson(e)).toList();
     return events;
   }
 
-  updateEvent(EventData event) async {
+  updateEvent(Event event) async {
     final db = await myDataBase;
     await db!.update(
       'events',

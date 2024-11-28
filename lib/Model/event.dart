@@ -1,4 +1,4 @@
-class EventData {
+class Event {
   String name;
   String description;
   DateTime date;
@@ -7,7 +7,7 @@ class EventData {
   int? id;
   int? userId = 1;
 
-  EventData(
+  Event(
       {required this.name,
       required this.description,
       required this.date,
@@ -16,7 +16,7 @@ class EventData {
       this.userId,
       required this.category});
 
-  EventData copyWith({
+  Event copyWith({
     String? name,
     String? description,
     DateTime? date,
@@ -25,7 +25,7 @@ class EventData {
     int? id,
     int? userId,
   }) {
-    return EventData(
+    return Event(
       name: name ?? this.name,
       description: description ?? this.description,
       date: date ?? this.date,
@@ -36,8 +36,8 @@ class EventData {
     );
   }
 
-  factory EventData.fromJson(Map<String, dynamic> json) {
-    return EventData(
+  factory Event.fromJson(Map<String, dynamic> json) {
+    return Event(
         name: json['name'],
         description: json['description'],
         date: DateTime.parse(json['date']),
