@@ -1,14 +1,18 @@
 import 'package:celebratio/CustomWidget.dart';
 import 'package:celebratio/Model/event.dart';
 import 'package:celebratio/EventDetails.dart';
+import 'package:celebratio/globals.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import 'Model/user.dart';
 import 'edit_event_page.dart';
 import 'Model/local_db.dart';
 
 class EventsPage extends StatefulWidget {
-  const EventsPage({super.key});
+  final int? userId;
+
+  const EventsPage({super.key, this.userId});
 
   @override
   State<EventsPage> createState() => _EventState();
@@ -19,17 +23,19 @@ class _EventState extends State<EventsPage> {
   int selectedButtonIndex = 0;
   String sortType = "";
   final DateTime today = DateTime.now();
-
+  var user;
   List<Event> filteredEvents = [];
   List<Event> allEvents = [];
 
   Future<void> fetchEvents() async {
     try {
-      var temp = await db.getAllEvents();
+      user ?? (user = await db.getUserById(widget.userId ?? loggedInUserId));
+      var temp = await db.getEventsByUserId(user.id!);
       setState(() {
         allEvents = List<Event>.from(temp);
         _filterEvents();
       });
+      print('fetched events $allEvents');
     } catch (e) {
       // print('Error fetching events: $e');
     }
@@ -197,7 +203,7 @@ class _EventState extends State<EventsPage> {
                         date: selectedDate!,
                         location: locationController.text,
                         category: categoryController.text,
-                        userId: 1);
+                        userId: 2);
                     final response = await db.insertNewEvent(event);
                     event.id = response;
                     if (response > 0) {
@@ -236,6 +242,16 @@ class _EventState extends State<EventsPage> {
     );
   }
 
+  String _setAppBarTitle() {
+    if (user == null) {
+      return 'Events';
+    }
+    if (user.id == loggedInUserId) {
+      return 'My Events';
+    }
+    return user.name + "'s Events";
+  }
+
   @override
   initState() {
     super.initState();
@@ -246,11 +262,15 @@ class _EventState extends State<EventsPage> {
   @override
   Widget build(BuildContext context) {
     return CustomWidget(
-        newButton: NewButton(
-            label: 'New Event',
-            onPressed: () {
-              _addNewEvent();
-            }),
+        title: _setAppBarTitle(),
+        // disable new button for events not created by the logged in user
+        newButton: user?.id == loggedInUserId
+            ? NewButton(
+                label: 'New Event',
+                onPressed: () {
+                  _addNewEvent();
+                })
+            : null,
         filterButtons: [
           FilterButton(
               label: 'Past',
@@ -306,7 +326,10 @@ class _EventState extends State<EventsPage> {
                 ),
               );
             },
-            onLongPress: () => _showOptionsDialog(index),
+            // disable long press for events not created by the logged in user
+            onLongPress: user?.id == loggedInUserId
+                ? () => _showOptionsDialog(index)
+                : null,
             trailing:
                 Text(formatter.format(DateTime.parse(event.date.toString()))),
             title: Text(event.name),

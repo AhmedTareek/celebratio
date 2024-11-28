@@ -3,6 +3,7 @@ import 'package:celebratio/Model/local_db.dart';
 import 'package:flutter/material.dart';
 
 import 'Model/user.dart';
+import 'events_page.dart';
 
 class Friends extends StatefulWidget {
   const Friends({super.key});
@@ -178,6 +179,15 @@ class _FriendsState extends State<Friends> {
                 ),
               ],
             ),
+            onTap: (){
+              // navigate to events page with friend's id
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => EventsPage(userId: filteredFriends[index].id),
+                ),
+              );
+            },
           );
         },
         itemCount: filteredFriends.length);
