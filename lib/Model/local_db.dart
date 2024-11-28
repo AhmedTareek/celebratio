@@ -3,6 +3,8 @@ import 'package:celebratio/Model/user.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 
+import 'gift.dart';
+
 class DataBase {
   static Database? _myDataBase;
 
@@ -15,10 +17,9 @@ class DataBase {
     }
   }
 
-  static const _version = 1;
+  static const _version = 2;
 
   initialize() async {
-    // await dropDatabase();
     String myPath = await getDatabasesPath();
     String path = join(myPath, 'celebratio.db');
     Database myDB = await openDatabase(path, version: _version,
@@ -52,6 +53,7 @@ class DataBase {
           price REAL NOT NULL,
           status TEXT NOT NULL,
           eventId INTEGER NOT NULL,
+          pledgedById INTEGER,
           FOREIGN KEY (eventId) REFERENCES events (id) ON DELETE CASCADE
       )''');
 
@@ -67,9 +69,32 @@ class DataBase {
       print("Database has been created with proper foreign keys.");
     }, onConfigure: (db) async {
       await db.execute('PRAGMA foreign_keys = ON');
+    },onUpgrade: (db, oldVersion, newVersion) async {
+      if (oldVersion < newVersion) {
+        await db.execute('DROP TABLE IF EXISTS gifts');
+        // Create Gifts table with foreign key referencing Events
+        await db.execute('''CREATE TABLE IF NOT EXISTS gifts (
+          id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+          name TEXT NOT NULL,
+          description TEXT NOT NULL,
+          category TEXT NOT NULL,
+          price REAL NOT NULL,
+          status TEXT NOT NULL,
+          eventId INTEGER NOT NULL,
+          pledgedById INTEGER,
+          FOREIGN KEY (eventId) REFERENCES events (id) ON DELETE CASCADE
+      )''');
+      }
     });
     return myDB;
   }
+
+  // // drop gifts table
+  // dropGiftsTable() async {
+  //   Database? myData = await myDataBase;
+  //   await myData!.execute('DROP TABLE IF EXISTS gifts');
+  //   print("Gifts table dropped successfully.");
+  // }
 
   /// Function to drop the database
   Future<void> dropDatabase() async {
@@ -132,5 +157,27 @@ class DataBase {
     List<Map<String, dynamic>> response = await myData!.query('users');
     List<User> users = response.map((e) => User.fromJson(e)).toList();
     return users;
+  }
+
+  getUserById(int id) async {
+    Database? myData = await myDataBase;
+    var response = await myData!.query('users', where: 'id = ?', whereArgs: [id]);
+    User user = User.fromJson(response.first);
+    return user;
+  }
+
+  // Gift functions
+
+  insertNewGift(Gift giftData) async {
+    Database? myData = await myDataBase;
+    int response = await myData!.insert('gifts', giftData.toMap());
+    return response;
+  }
+
+  getGiftsByEventId(int id) async {
+    Database? myData = await myDataBase;
+    var response = await myData!.query('gifts', where: 'eventId = ?', whereArgs: [id]);
+    List<Gift> gifts = response.map((e) => Gift.fromJson(e)).toList();
+    return gifts;
   }
 }
