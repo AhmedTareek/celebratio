@@ -51,7 +51,7 @@ class Event {
     return {
       'name': name,
       'description': description,
-      'date': date.toString(),
+      'date': date.toIso8601String(),
       'location': location,
       'category': category,
       'id': id,
