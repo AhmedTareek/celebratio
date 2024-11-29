@@ -17,7 +17,7 @@ class DataBase {
     }
   }
 
-  static const _version = 2;
+  static const _version = 3;
 
   initialize() async {
     String myPath = await getDatabasesPath();
@@ -81,20 +81,16 @@ class DataBase {
           price REAL NOT NULL,
           status TEXT NOT NULL,
           eventId INTEGER NOT NULL,
-          pledgedById INTEGER,
+          pledgerId INTEGER,
           FOREIGN KEY (eventId) REFERENCES events (id) ON DELETE CASCADE
       )''');
+        print('Database has been upgraded to version $newVersion');
       }
     });
     return myDB;
   }
 
-  // // drop gifts table
-  // dropGiftsTable() async {
-  //   Database? myData = await myDataBase;
-  //   await myData!.execute('DROP TABLE IF EXISTS gifts');
-  //   print("Gifts table dropped successfully.");
-  // }
+
 
   /// Function to drop the database
   Future<void> dropDatabase() async {
@@ -144,6 +140,14 @@ class DataBase {
     );
   }
 
+  getUpcomingEventsCountByUserId(int id) async {
+    Database? myData = await myDataBase;
+    var response = await myData!.query('events',
+        where: 'userId = ? AND date >= ?',
+        whereArgs: [id, DateTime.now().toIso8601String()]);
+    return response.length;
+  }
+
   // User functions
 
   insertNewUser(User userData) async {
@@ -179,5 +183,21 @@ class DataBase {
     var response = await myData!.query('gifts', where: 'eventId = ?', whereArgs: [id]);
     List<Gift> gifts = response.map((e) => Gift.fromJson(e)).toList();
     return gifts;
+  }
+
+  deleteGiftById(int id) async {
+    Database? myData = await myDataBase;
+    int response = await myData!.delete('gifts', where: 'id = ?', whereArgs: [id]);
+    return response;
+  }
+
+  updateGift(Gift gift) async {
+    final db = await myDataBase;
+    await db!.update(
+      'gifts',
+      gift.toMap(),
+      where: 'id = ?',
+      whereArgs: [gift.id],
+    );
   }
 }
