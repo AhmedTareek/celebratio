@@ -1,11 +1,10 @@
 import 'package:celebratio/CustomWidget.dart';
 import 'package:celebratio/Model/event.dart';
-import 'package:celebratio/EventDetails.dart';
+import 'package:celebratio/event_details_page.dart';
 import 'package:celebratio/globals.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-import 'Model/user.dart';
 import 'edit_event_page.dart';
 import 'Model/local_db.dart';
 
@@ -96,9 +95,7 @@ class _EventState extends State<EventsPage> {
                 try {
                   db.deleteEventById(filteredEvents[index].id!);
                   allEvents.remove(filteredEvents[index]);
-                  setState(() {
-                    _filterEvents();
-                  });
+                  _filterEvents();
                 } catch (e) {
                   print('Error deleting event: $e');
                 }
@@ -203,7 +200,7 @@ class _EventState extends State<EventsPage> {
                         date: selectedDate!,
                         location: locationController.text,
                         category: categoryController.text,
-                        userId: 2);
+                        userId: loggedInUserId);
                     final response = await db.insertNewEvent(event);
                     event.id = response;
                     if (response > 0) {

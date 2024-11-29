@@ -1,11 +1,11 @@
-import 'package:celebratio/EventDetails.dart';
+import 'package:celebratio/event_details_page.dart';
 import 'package:celebratio/InGifts.dart';
 import 'package:celebratio/OutGifts.dart';
 import 'package:celebratio/Profile.dart';
 import 'package:flutter/material.dart';
 
-import 'EventsPage.dart';
-import 'Friends.dart';
+import 'events_page.dart';
+import 'friends_page.dart';
 
 void main() {
   runApp(const MyApp());
