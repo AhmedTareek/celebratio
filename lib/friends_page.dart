@@ -170,37 +170,12 @@ class _FriendsState extends State<Friends> {
               future: _getUpcomingEventsCount(filteredFriends[index].id!),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Stack(
-                    children: [
-                      Icon(Icons.calendar_today), // Base icon for visual context
-                      Positioned(
-                        top: 0,
-                        right: 0,
-                        child: CircularProgressIndicator(strokeWidth: 2), // Loader
-                      ),
-                    ],
-                  );
+                  return const SizedBox(); // Loading
                 } else if (snapshot.hasError || snapshot.data == null || snapshot.data!.isEmpty) {
-                  return const Stack(
-                    children: [
-                      Icon(Icons.calendar_today),
-                      Positioned(
-                        top: 0,
-                        right: 0,
-                        child: CircleAvatar(
-                          backgroundColor: Colors.red,
-                          radius: 10,
-                          child: Text(
-                            '0',
-                            style: TextStyle(fontSize: 12, color: Colors.white),
-                          ),
-                        ),
-                      ),
-                    ],
-                  );
+                  return const SizedBox(); // No notification
                 } else {
                   if(snapshot.data == '0') {
-                    return Container(); // No notification
+                    return const SizedBox(); // No notification
                   }
                   return Stack(
                     alignment: Alignment.center,
