@@ -1,7 +1,9 @@
 import 'package:celebratio/Model/event.dart';
 import 'package:celebratio/GiftDetails.dart';
+import 'package:celebratio/Model/gift.dart';
 import 'package:flutter/material.dart';
 import 'CustomWidget.dart';
+import 'Model/local_db.dart';
 
 class EventDetails extends StatefulWidget {
   final Event eventData;
@@ -15,10 +17,12 @@ class EventDetails extends StatefulWidget {
 }
 
 class _EventDetailsState extends State<EventDetails> {
+  final db = DataBase();
   String selectedFilter = 'All'; // Tracks the current filter
-  List<Map<String, dynamic>> allGifts = []; // Replace with your gifts data
-  List<Map<String, dynamic>> filteredGifts = [];
+  List<Gift> allGifts = []; // Replace with your gifts data
+  List<Gift> filteredGifts = [];
   String sortType = "";
+  String _eventCreator = "";
 
   void _filterGifts() {
     setState(() {
@@ -26,7 +30,7 @@ class _EventDetailsState extends State<EventDetails> {
         filteredGifts = allGifts.toList();
       } else {
         filteredGifts =
-            allGifts.where((gift) => gift['status'] == selectedFilter).toList();
+            allGifts.where((gift) => gift.status == selectedFilter).toList();
       }
       _sortGifts(); // Apply sorting after filtering
     });
@@ -35,26 +39,166 @@ class _EventDetailsState extends State<EventDetails> {
   void _sortGifts() {
     setState(() {
       if (sortType == "Category") {
-        filteredGifts.sort((a, b) => a['category'].compareTo(b['category']));
+        filteredGifts.sort((a, b) => a.category.compareTo(b.category));
       } else if (sortType == "Name") {
-        filteredGifts.sort((a, b) => a['name'].compareTo(b['name']));
+        filteredGifts.sort((a, b) => a.category.compareTo(b.category));
       }
     });
+  }
+
+  _setCreatorName() async {
+    var user = await db.getUserById(widget.eventData.userId!);
+    setState(() {
+      _eventCreator = user.name;
+    });
+  }
+
+  _fetchGifts() async {
+    try {
+      var temp = await db.getGiftsByEventId(widget.eventData.id!);
+      setState(() {
+        allGifts = List<Gift>.from(temp);
+        _filterGifts();
+      });
+    } catch (e) {
+      // print('Error fetching gifts: $e');
+    }
+  }
+
+  Future<String> _getPledgerName(int? id) async {
+    if (id == null) {
+      return 'No one';
+    }
+    var user = await db.getUserById(id);
+    return user.name;
+  }
+
+  void _addNewGift() {
+    final TextEditingController nameController = TextEditingController();
+    final TextEditingController descriptionController = TextEditingController();
+    final TextEditingController categoryController = TextEditingController();
+    final TextEditingController priceController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Add New Gift'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: nameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Name',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: descriptionController,
+                  decoration: const InputDecoration(
+                    labelText: 'Description',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: categoryController,
+                  decoration: const InputDecoration(
+                    labelText: 'Category',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: priceController,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    labelText: 'Price',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context); // Close the dialog without adding
+              },
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                if (nameController.text.isNotEmpty &&
+                    descriptionController.text.isNotEmpty &&
+                    categoryController.text.isNotEmpty &&
+                    priceController.text.isNotEmpty) {
+                  try {
+                    // Parse price
+                    final double price = double.parse(priceController.text);
+
+                    // Create gift object
+                    Gift gift = Gift(
+                      id: null,
+                      name: nameController.text,
+                      description: descriptionController.text,
+                      category: categoryController.text,
+                      price: price,
+                      status: 'Available',
+                      eventId: widget.eventData.id!,
+                      pledgerId: null,
+                    );
+
+                    // Insert gift into the database
+                    final response = await db.insertNewGift(gift);
+                    gift.id = response;
+
+                    if (response > 0) {
+                      setState(() {
+                        allGifts.add(gift);
+                        _filterGifts();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                              content: Text('Gift added successfully')),
+                        );
+                      });
+                      if (context.mounted) {
+                        Navigator.of(context).pop();
+                      } // Close the dialog
+                    } else {
+                      throw Exception('Failed to insert gift');
+                    }
+                  } catch (e) {
+                    print(e);
+                    // Show error message if database operation fails
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                          content: Text('Error adding gift: ${e.toString()}')),
+                    );
+                  }
+                } else {
+                  // Show error message if fields are empty
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Please fill all fields')),
+                  );
+                }
+              },
+              child: const Text('Add'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
   void initState() {
     super.initState();
-    // Example gift data
-    allGifts = List.generate(
-      25,
-      (index) => {
-        "name": "Gift Name $index",
-        "status": index % 3 == 0 ? "Available" : "Pledged",
-        "pledgedBy": index % 3 != 0 ? "Sarah" : null,
-        "category": index % 2 == 0 ? "Electronics" : "Books",
-      },
-    );
+    _setCreatorName();
+    _fetchGifts();
     _filterGifts(); // Initialize the filtered list
   }
 
@@ -68,7 +212,7 @@ class _EventDetailsState extends State<EventDetails> {
           location: currentEvent.location,
           date: currentEvent.date.toString(),
           description: currentEvent.description,
-          createdBy: 'createdBy'),
+          createdBy: _eventCreator),
       filterButtons: [
         FilterButton(
             label: 'All',
@@ -129,7 +273,7 @@ class _EventDetailsState extends State<EventDetails> {
                   MaterialPageRoute(builder: (context) => GiftDetails()));
             },
             onLongPress: () {
-              if (gift['status'] == 'Available') {
+              if (gift.status == 'Available') {
                 showModalBottomSheet(
                   context: context,
                   builder: (BuildContext context) {
@@ -156,18 +300,25 @@ class _EventDetailsState extends State<EventDetails> {
               }
             },
             title: Text(
-              gift['name'],
+              gift.name,
             ),
-            subtitle: gift['pledgedBy'] != null
-                ? Text('${gift['pledgedBy']} pledged this gift')
-                : null,
+            subtitle: FutureBuilder(
+                initialData: "",
+                future: _getPledgerName(gift.pledgerId),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.done) {
+                    return Text('${snapshot.data} has pledged this gift');
+                  } else {
+                    return const Text('');
+                  }
+                }),
             trailing: Stack(
               alignment: Alignment.center,
               children: [
                 CircleAvatar(
                   radius: 5,
                   backgroundColor:
-                      gift['status'] == 'Available' ? Colors.green : Colors.red,
+                      gift.status == 'Available' ? Colors.green : Colors.red,
                 ),
               ],
             ),
@@ -175,7 +326,11 @@ class _EventDetailsState extends State<EventDetails> {
         );
       },
       itemCount: filteredGifts.length,
-      newButton: NewButton(label: 'New Gift', onPressed: () {}),
+      newButton: NewButton(
+          label: 'New Gift',
+          onPressed: () {
+            _addNewGift();
+          }),
     );
   }
 }
