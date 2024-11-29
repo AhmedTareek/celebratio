@@ -242,5 +242,46 @@ class DataBase {
     return result.map((map) => GiftDetailsModel.fromMap(map)).toList();
   }
 
+  // Future<List<GiftDetailsModel>> getOutgoingGiftsWithDetails(int userId) async {
+  //   Database? myData = await myDataBase;
+  //
+  //   final List<Map<String, dynamic>> result = await myData!.rawQuery('''
+  //     SELECT
+  //       gifts.*,
+  //       events.name as eventName,
+  //       events.date as eventDate,
+  //       users.name as pledgerName
+  //     FROM gifts
+  //     INNER JOIN events ON gifts.eventId = events.id
+  //     INNER JOIN users ON events.userId = users.id
+  //     WHERE gifts.pledgerId = ?
+  //     ORDER BY events.date ASC
+  //   ''', [userId]);
+  //
+  //   return result.map((map) => GiftDetailsModel.fromMap(map)).toList();
+  // }
+
+  Future<List<GiftDetailsModel>> getOutgoingGiftsWithDetails(int userId) async {
+    Database? myData = await myDataBase;
+
+    final List<Map<String, dynamic>> result = await myData!.rawQuery('''
+      SELECT 
+        gifts.*,
+        events.name as eventName,
+        events.date as eventDate,
+        events.userId as hostId,
+        host.name as hostName,
+        pledger.name as pledgerName
+      FROM gifts 
+      INNER JOIN events ON gifts.eventId = events.id
+      INNER JOIN users pledger ON gifts.pledgerId = pledger.id
+      INNER JOIN users host ON events.userId = host.id
+      WHERE gifts.pledgerId = ? 
+      ORDER BY events.date ASC
+    ''', [userId]);
+
+    return result.map((map) => GiftDetailsModel.fromMap(map)).toList();
+  }
+
 
 }
