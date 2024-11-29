@@ -1,5 +1,5 @@
 import 'package:celebratio/Model/event.dart';
-import 'package:celebratio/GiftDetails.dart';
+import 'package:celebratio/gift_details_page.dart';
 import 'package:celebratio/Model/gift.dart';
 import 'package:celebratio/globals.dart';
 import 'package:flutter/material.dart';
@@ -270,8 +270,16 @@ class _EventDetailsState extends State<EventDetails> {
           padding: const EdgeInsets.all(8.0),
           child: ListTile(
             onTap: () {
-              Navigator.push(context,
-                  MaterialPageRoute(builder: (context) => GiftDetails()));
+              Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => GiftDetails(
+                            gift: gift,giftOwnerId: currentEvent.userId!,
+                          ))).then(
+                  (value){
+                    _fetchGifts();
+                  }
+              );
             },
             onLongPress: currentEvent.userId == loggedInUserId
                 ? () {
