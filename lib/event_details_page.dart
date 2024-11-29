@@ -1,6 +1,7 @@
 import 'package:celebratio/Model/event.dart';
 import 'package:celebratio/GiftDetails.dart';
 import 'package:celebratio/Model/gift.dart';
+import 'package:celebratio/globals.dart';
 import 'package:flutter/material.dart';
 import 'CustomWidget.dart';
 import 'Model/local_db.dart';
@@ -272,33 +273,31 @@ class _EventDetailsState extends State<EventDetails> {
               Navigator.push(context,
                   MaterialPageRoute(builder: (context) => GiftDetails()));
             },
-            onLongPress: () {
-              if (gift.status == 'Available') {
-                showModalBottomSheet(
-                  context: context,
-                  builder: (BuildContext context) {
-                    return Wrap(
-                      children: <Widget>[
-                        ListTile(
-                          leading: Icon(Icons.edit),
-                          title: Text('Edit'),
-                          onTap: () {
-                            Navigator.pop(context);
-                          },
-                        ),
-                        ListTile(
-                          leading: Icon(Icons.delete),
-                          title: Text('Delete'),
-                          onTap: () {
-                            Navigator.pop(context);
-                          },
-                        ),
-                      ],
-                    );
-                  },
-                );
-              }
-            },
+            onLongPress: currentEvent.userId == loggedInUserId
+                ? () {
+                    if (gift.status == 'Available') {
+                      showModalBottomSheet(
+                        context: context,
+                        builder: (BuildContext context) {
+                          return Wrap(
+                            children: <Widget>[
+                              ListTile(
+                                leading: Icon(Icons.delete),
+                                title: Text('Delete'),
+                                onTap: () async {
+                                  await db.deleteGiftById(gift.id!);
+                                  allGifts.remove(gift);
+                                  _filterGifts();
+                                  Navigator.pop(context);
+                                },
+                              ),
+                            ],
+                          );
+                        },
+                      );
+                    }
+                  }
+                : null,
             title: Text(
               gift.name,
             ),
@@ -326,11 +325,13 @@ class _EventDetailsState extends State<EventDetails> {
         );
       },
       itemCount: filteredGifts.length,
-      newButton: NewButton(
-          label: 'New Gift',
-          onPressed: () {
-            _addNewGift();
-          }),
+      newButton: currentEvent.userId == loggedInUserId
+          ? NewButton(
+              label: 'New Gift',
+              onPressed: () {
+                _addNewGift();
+              })
+          : null,
     );
   }
 }
