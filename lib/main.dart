@@ -1,5 +1,6 @@
 import 'package:celebratio/event_details_page.dart';
-import 'package:celebratio/InGifts.dart';
+import 'package:celebratio/globals.dart';
+import 'package:celebratio/incoming_gifts_page.dart';
 import 'package:celebratio/OutGifts.dart';
 import 'package:celebratio/Profile.dart';
 import 'package:flutter/material.dart';
