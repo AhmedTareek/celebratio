@@ -4,6 +4,7 @@ import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 
 import 'gift.dart';
+import 'gift_details.dart';
 
 class DataBase {
   static Database? _myDataBase;
@@ -24,16 +25,16 @@ class DataBase {
     String path = join(myPath, 'celebratio.db');
     Database myDB = await openDatabase(path, version: _version,
         onCreate: (db, version) async {
-      // Create Users table
-      await db.execute('''CREATE TABLE IF NOT EXISTS users (
+          // Create Users table
+          await db.execute('''CREATE TABLE IF NOT EXISTS users (
           id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
           name TEXT NOT NULL,
           email TEXT NOT NULL,
           preferences TEXT
       )''');
 
-      // Create Events table with foreign key referencing Users
-      await db.execute('''CREATE TABLE IF NOT EXISTS events (
+          // Create Events table with foreign key referencing Users
+          await db.execute('''CREATE TABLE IF NOT EXISTS events (
           id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
           name TEXT NOT NULL,
           description TEXT NOT NULL,
@@ -44,8 +45,8 @@ class DataBase {
           FOREIGN KEY (userId) REFERENCES users (id) ON DELETE CASCADE
       )''');
 
-      // Create Gifts table with foreign key referencing Events
-      await db.execute('''CREATE TABLE IF NOT EXISTS gifts (
+          // Create Gifts table with foreign key referencing Events
+          await db.execute('''CREATE TABLE IF NOT EXISTS gifts (
           id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
           name TEXT NOT NULL,
           description TEXT NOT NULL,
@@ -57,8 +58,8 @@ class DataBase {
           FOREIGN KEY (eventId) REFERENCES events (id) ON DELETE CASCADE
       )''');
 
-      // Create Friends table with foreign keys referencing Users
-      await db.execute('''CREATE TABLE IF NOT EXISTS friends (
+          // Create Friends table with foreign keys referencing Users
+          await db.execute('''CREATE TABLE IF NOT EXISTS friends (
           userId INTEGER NOT NULL,
           friendId INTEGER NOT NULL,
           PRIMARY KEY (userId, friendId),
@@ -66,14 +67,14 @@ class DataBase {
           FOREIGN KEY (friendId) REFERENCES users (id) ON DELETE CASCADE
       )''');
 
-      print("Database has been created with proper foreign keys.");
-    }, onConfigure: (db) async {
-      await db.execute('PRAGMA foreign_keys = ON');
-    },onUpgrade: (db, oldVersion, newVersion) async {
-      if (oldVersion < newVersion) {
-        await db.execute('DROP TABLE IF EXISTS gifts');
-        // Create Gifts table with foreign key referencing Events
-        await db.execute('''CREATE TABLE IF NOT EXISTS gifts (
+          print("Database has been created with proper foreign keys.");
+        }, onConfigure: (db) async {
+          await db.execute('PRAGMA foreign_keys = ON');
+        }, onUpgrade: (db, oldVersion, newVersion) async {
+          if (oldVersion < newVersion) {
+            await db.execute('DROP TABLE IF EXISTS gifts');
+            // Create Gifts table with foreign key referencing Events
+            await db.execute('''CREATE TABLE IF NOT EXISTS gifts (
           id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
           name TEXT NOT NULL,
           description TEXT NOT NULL,
@@ -84,12 +85,11 @@ class DataBase {
           pledgerId INTEGER,
           FOREIGN KEY (eventId) REFERENCES events (id) ON DELETE CASCADE
       )''');
-        print('Database has been upgraded to version $newVersion');
-      }
-    });
+            print('Database has been upgraded to version $newVersion');
+          }
+        });
     return myDB;
   }
-
 
 
   /// Function to drop the database
@@ -105,7 +105,7 @@ class DataBase {
   deleteEventById(int id) async {
     Database? myData = await myDataBase;
     int response =
-        await myData!.delete('events', where: 'id = ?', whereArgs: [id]);
+    await myData!.delete('events', where: 'id = ?', whereArgs: [id]);
     return response;
   }
 
@@ -125,7 +125,7 @@ class DataBase {
   getEventsByUserId(int id) async {
     Database? myData = await myDataBase;
     var response =
-        await myData!.query('events', where: 'userId = ?', whereArgs: [id]);
+    await myData!.query('events', where: 'userId = ?', whereArgs: [id]);
     List<Event> events = response.map((e) => Event.fromJson(e)).toList();
     return events;
   }
@@ -165,7 +165,8 @@ class DataBase {
 
   getUserById(int id) async {
     Database? myData = await myDataBase;
-    var response = await myData!.query('users', where: 'id = ?', whereArgs: [id]);
+    var response = await myData!.query(
+        'users', where: 'id = ?', whereArgs: [id]);
     User user = User.fromJson(response.first);
     return user;
   }
@@ -180,14 +181,16 @@ class DataBase {
 
   getGiftsByEventId(int id) async {
     Database? myData = await myDataBase;
-    var response = await myData!.query('gifts', where: 'eventId = ?', whereArgs: [id]);
+    var response = await myData!.query(
+        'gifts', where: 'eventId = ?', whereArgs: [id]);
     List<Gift> gifts = response.map((e) => Gift.fromJson(e)).toList();
     return gifts;
   }
 
   deleteGiftById(int id) async {
     Database? myData = await myDataBase;
-    int response = await myData!.delete('gifts', where: 'id = ?', whereArgs: [id]);
+    int response = await myData!.delete(
+        'gifts', where: 'id = ?', whereArgs: [id]);
     return response;
   }
 
@@ -200,4 +203,44 @@ class DataBase {
       whereArgs: [gift.id],
     );
   }
+
+  getGiftsByPledgerId(int id) async {
+    Database? myData = await myDataBase;
+    var response = await myData!.query(
+        'gifts', where: 'pledgerId = ?', whereArgs: [id]);
+    List<Gift> gifts = response.map((e) => Gift.fromJson(e)).toList();
+    return gifts;
+  }
+
+  // get all gifts by user id where their pledger id is not null
+  getAllPledgedGiftsByUserId(int id) async {
+    Database? myData = await myDataBase;
+    var response = await myData!.query(
+        'gifts', where: 'eventId IN (SELECT id FROM events WHERE userId = ?) AND pledgerId IS NOT NULL',
+        whereArgs: [id]);
+    List<Gift> gifts = response.map((e) => Gift.fromJson(e)).toList();
+    return gifts;
+  }
+
+  Future<List<GiftDetailsModel>> getIncomingGiftsWithDetails(int userId) async {
+    Database? myData = await myDataBase;
+
+    final List<Map<String, dynamic>> result = await myData!.rawQuery('''
+      SELECT 
+        gifts.*,
+        events.name as eventName,
+        events.date as eventDate,
+        users.name as pledgerName
+      FROM gifts 
+      INNER JOIN events ON gifts.eventId = events.id
+      INNER JOIN users ON gifts.pledgerId = users.id
+      WHERE events.userId = ? 
+      AND gifts.pledgerId IS NOT NULL
+      ORDER BY events.date ASC
+    ''', [userId]);
+    print(result);
+    return result.map((map) => GiftDetailsModel.fromMap(map)).toList();
+  }
+
+
 }
