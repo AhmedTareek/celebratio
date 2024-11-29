@@ -83,7 +83,8 @@ class _FriendsState extends State<Friends> {
                     emailController.text.isNotEmpty) {
                   try {
                     // Create user object
-                    User user = User(name: nameController.text, email: emailController.text);
+                    User user = User(
+                        name: nameController.text, email: emailController.text);
                     // Insert user into the database
                     final response = await db.insertNewUser(user);
                     user.id = response;
@@ -92,7 +93,8 @@ class _FriendsState extends State<Friends> {
                         allFriends.add(user);
                         _filterFriends();
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('User added successfully')),
+                          const SnackBar(
+                              content: Text('User added successfully')),
                         );
                       });
                       Navigator.pop(context); // Close the dialog
@@ -103,7 +105,8 @@ class _FriendsState extends State<Friends> {
                     print(e);
                     // Show error message if database operation fails
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Error adding user: ${e.toString()}')),
+                      SnackBar(
+                          content: Text('Error adding user: ${e.toString()}')),
                     );
                   }
                 } else {
@@ -120,7 +123,6 @@ class _FriendsState extends State<Friends> {
       },
     );
   }
-
 
   @override
   void initState() {
@@ -140,9 +142,11 @@ class _FriendsState extends State<Friends> {
   Widget build(BuildContext context) {
     return CustomWidget(
         title: 'My Friends',
-        newButton: NewButton(label: 'New Friend', onPressed: () {
-          _addNewUser();
-        }),
+        newButton: NewButton(
+            label: 'New Friend',
+            onPressed: () {
+              _addNewUser();
+            }),
         topWidget: Padding(
           padding: const EdgeInsets.all(10.0),
           child: TextField(
@@ -162,34 +166,84 @@ class _FriendsState extends State<Friends> {
             leading: CircleAvatar(),
             title: Text(filteredFriends[index].name),
             subtitle: const Text('Hello, I am using Celebratio'),
-            trailing: Stack(
-              alignment: Alignment.center,
-              children: [
-                CircleAvatar(
-                  radius: 15,
-                  backgroundColor: Theme.of(context).secondaryHeaderColor,
-                ),
-                Positioned(
-                  child: Text(
-                    '3', // Notification number
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ],
+            trailing: FutureBuilder<String>(
+              future: _getUpcomingEventsCount(filteredFriends[index].id!),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Stack(
+                    children: [
+                      Icon(Icons.calendar_today), // Base icon for visual context
+                      Positioned(
+                        top: 0,
+                        right: 0,
+                        child: CircularProgressIndicator(strokeWidth: 2), // Loader
+                      ),
+                    ],
+                  );
+                } else if (snapshot.hasError || snapshot.data == null || snapshot.data!.isEmpty) {
+                  return const Stack(
+                    children: [
+                      Icon(Icons.calendar_today),
+                      Positioned(
+                        top: 0,
+                        right: 0,
+                        child: CircleAvatar(
+                          backgroundColor: Colors.red,
+                          radius: 10,
+                          child: Text(
+                            '0',
+                            style: TextStyle(fontSize: 12, color: Colors.white),
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                } else {
+                  if(snapshot.data == '0') {
+                    return Container(); // No notification
+                  }
+                  return Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      CircleAvatar(
+                        radius: 15,
+                        backgroundColor: Theme.of(context).secondaryHeaderColor,
+                      ),
+                      Positioned(
+                        child: Text(
+                          snapshot.data.toString(), // Notification number
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                }
+              },
             ),
-            onTap: (){
+            onTap: () {
               // navigate to events page with friend's id
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => EventsPage(userId: filteredFriends[index].id),
+                  builder: (context) =>
+                      EventsPage(userId: filteredFriends[index].id),
                 ),
               );
             },
           );
         },
+
         itemCount: filteredFriends.length);
+  }
+
+  Future<String> _getUpcomingEventsCount(int userId) async {
+    try {
+      var count = await db.getUpcomingEventsCountByUserId(userId);
+      return count.toString();
+    } catch (e) {
+      return '';
+    }
   }
 }
