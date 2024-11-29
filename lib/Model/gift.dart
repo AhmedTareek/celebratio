@@ -1,11 +1,12 @@
 class Gift {
-  final int? id;
-  final String name;
-  final String description;
-  final String category;
-  final double price;
-  final String status;
-  final int eventId;
+  int? id;
+  String name;
+  String description;
+  String category;
+  double price;
+  String status;
+  int eventId;
+  int? pledgerId;
 
   Gift(
       {this.id,
@@ -14,7 +15,8 @@ class Gift {
       required this.category,
       required this.price,
       required this.status,
-      required this.eventId});
+      required this.eventId,
+      this.pledgerId});
 
   Gift copyWith({
     int? id,
@@ -24,6 +26,7 @@ class Gift {
     double? price,
     String? status,
     int? eventId,
+    int? pledgerId,
   }) {
     return Gift(
       id: id ?? this.id,
@@ -33,6 +36,7 @@ class Gift {
       price: price ?? this.price,
       status: status ?? this.status,
       eventId: eventId ?? this.eventId,
+      pledgerId: pledgerId ?? this.pledgerId,
     );
   }
 
@@ -44,7 +48,8 @@ class Gift {
         price: json['price'],
         status: json['status'],
         eventId: json['eventId'],
-        id: json['id']);
+        id: json['id'],
+        pledgerId: json['pledgerId']);
   }
 
   Map<String, Object?> toMap() {
@@ -55,7 +60,8 @@ class Gift {
       'price': price,
       'status': status,
       'eventId': eventId,
-      'id': id
+      'id': id,
+      'pledgerId': pledgerId
     };
   }
 }

@@ -1,54 +1,76 @@
+import 'package:celebratio/globals.dart';
 import 'package:flutter/material.dart';
 
+import 'Model/gift.dart';
+import 'Model/local_db.dart';
+
 class GiftDetails extends StatefulWidget {
-  const GiftDetails({super.key});
+  final Gift gift;
+  final int giftOwnerId;
+
+  const GiftDetails({super.key, required this.gift, required this.giftOwnerId});
 
   @override
   State<StatefulWidget> createState() => _GiftDetailsState();
 }
 
 class _GiftDetailsState extends State<GiftDetails> {
+  final db = DataBase();
   bool isEditing = false;
-  final TextEditingController _nameController =
-      TextEditingController(text: 'Gift Name');
-  final TextEditingController _priceController =
-      TextEditingController(text: '32');
-  final TextEditingController _descriptionController = TextEditingController(
-    text:
-        'Elden Ring is a 2022 action role-playing game developed by FromSoftware...',
-  );
-  String? _selectedCategory = 'Electronics';
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _priceController = TextEditingController();
+  final TextEditingController _descriptionController = TextEditingController();
+  final TextEditingController _categoryController = TextEditingController();
 
   void toggleEditMode() {
+    var gift = widget.gift;
     setState(() {
       isEditing = !isEditing;
+      _nameController.text = gift.name;
+      _priceController.text = gift.price.toString();
+      _descriptionController.text = gift.description;
+      _categoryController.text = gift.category;
     });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController.text = widget.gift.name;
+    _priceController.text = widget.gift.price.toString();
+    _descriptionController.text = widget.gift.description;
+    _categoryController.text = widget.gift.category;
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-
+    var gift = widget.gift;
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,
       appBar: isEditing
           ? AppBar(
+              leading: IconButton(
+                icon: const Icon(Icons.close),
+                onPressed: toggleEditMode,
+              ),
               title: const Text('Edit Gift'),
               actions: [
                 IconButton(
                   icon: const Icon(Icons.save),
-                  onPressed: () {
-                    // Save changes and exit edit mode
-                    toggleEditMode();
+                  onPressed: () async {
+                    await _saveChanges(gift);
                   },
                 ),
               ],
             )
           : null,
-      floatingActionButton: !isEditing
+      floatingActionButton: !isEditing &&
+              widget.giftOwnerId == loggedInUserId &&
+              widget.gift.status == 'Available'
           ? FloatingActionButton(
               onPressed: toggleEditMode,
-              child: Icon(Icons.edit),
+              child: const Icon(Icons.edit),
             )
           : null,
       body: SafeArea(
@@ -64,21 +86,23 @@ class _GiftDetailsState extends State<GiftDetails> {
                     width: double.infinity,
                     height: 250,
                   ),
-                  Positioned(
-                    top: 16,
-                    left: 16,
-                    child: CircleAvatar(
-                      backgroundColor:
-                          theme.colorScheme.onBackground.withOpacity(0.7),
-                      child: IconButton(
-                        icon: Icon(Icons.arrow_back,
-                            color: theme.colorScheme.primary),
-                        onPressed: () {
-                          Navigator.pop(context);
-                        },
-                      ),
-                    ),
-                  ),
+                  !isEditing
+                      ? Positioned(
+                          top: 16,
+                          left: 16,
+                          child: CircleAvatar(
+                            backgroundColor:
+                                theme.colorScheme.onSurface.withOpacity(0.7),
+                            child: IconButton(
+                              icon: Icon(Icons.arrow_back,
+                                  color: theme.colorScheme.primary),
+                              onPressed: () {
+                                Navigator.pop(context);
+                              },
+                            ),
+                          ),
+                        )
+                      : Container(),
                 ],
               ),
               Padding(
@@ -93,41 +117,32 @@ class _GiftDetailsState extends State<GiftDetails> {
                               TextField(
                                 controller: _nameController,
                                 decoration: const InputDecoration(
-                                  labelText: 'Gift Name',
+                                  labelText: 'Name',
                                   border: OutlineInputBorder(),
                                 ),
                               ),
                               const SizedBox(height: 8.0),
                               // Add some space between the fields
-                              DropdownMenu(
-                                label: const Text('Category'),
-                                onSelected: (value) {
-                                  _selectedCategory = value;
-                                  setState(() {});
-                                },
-                                dropdownMenuEntries: const [
-                                  DropdownMenuEntry(
-                                      value: 'Electronics',
-                                      label: 'Electronics'),
-                                  DropdownMenuEntry(
-                                      value: 'Books', label: 'Books'),
-                                  DropdownMenuEntry(
-                                      value: 'Other', label: 'Other'),
-                                ],
-                              ),
+                              TextField(
+                                controller: _categoryController,
+                                decoration: const InputDecoration(
+                                  labelText: 'Category',
+                                  border: OutlineInputBorder(),
+                                ),
+                              )
                             ],
                           )
                         : Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(
-                                _nameController.text,
+                                gift.name,
                                 style: theme.textTheme.headlineSmall?.copyWith(
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
                               Text(
-                                _selectedCategory ?? 'Category',
+                                gift.category,
                                 style: theme.textTheme.bodyMedium,
                               ),
                             ],
@@ -148,7 +163,7 @@ class _GiftDetailsState extends State<GiftDetails> {
                               style: theme.textTheme.titleLarge?.copyWith(
                                 color: theme.colorScheme.secondary,
                               ),
-                              decoration: InputDecoration(
+                              decoration: const InputDecoration(
                                 labelText: 'Price',
                                 border: OutlineInputBorder(),
                                 prefixText: '\$',
@@ -156,7 +171,7 @@ class _GiftDetailsState extends State<GiftDetails> {
                             ),
                           )
                         : Text(
-                            '\$${_priceController.text}',
+                            '\$${gift.price.toString()}',
                             style: theme.textTheme.titleLarge?.copyWith(
                               color: theme.colorScheme.secondary,
                               fontWeight: FontWeight.w600,
@@ -164,7 +179,9 @@ class _GiftDetailsState extends State<GiftDetails> {
                           ),
                     if (!isEditing)
                       CircleAvatar(
-                        backgroundColor: Colors.green,
+                        backgroundColor: gift.status == 'Available'
+                            ? Colors.green
+                            : Colors.red,
                         radius: 15,
                       ),
                   ],
@@ -176,21 +193,23 @@ class _GiftDetailsState extends State<GiftDetails> {
                     ? TextField(
                         controller: _descriptionController,
                         maxLines: 6,
-                        decoration: InputDecoration(
+                        decoration: const InputDecoration(
                           labelText: 'Description',
                           border: OutlineInputBorder(),
                         ),
                         style: theme.textTheme.bodyMedium,
                       )
                     : Text(
-                        _descriptionController.text,
+                        gift.description,
                         style: theme.textTheme.bodyMedium?.copyWith(
                           color: theme.colorScheme.onSurface.withOpacity(0.8),
                         ),
                         textAlign: TextAlign.justify,
                       ),
               ),
-              if (!isEditing)
+              if (!isEditing &&
+                  widget.giftOwnerId != loggedInUserId &&
+                  widget.gift.status == 'Available')
                 Container(
                   alignment: Alignment.bottomCenter,
                   child: Padding(
@@ -206,7 +225,17 @@ class _GiftDetailsState extends State<GiftDetails> {
                             borderRadius: BorderRadius.circular(8),
                           ),
                         ),
-                        onPressed: () {},
+                        onPressed: () async {
+                          Gift updatedGift = gift.copyWith(
+                            status: 'Pledged',
+                            pledgerId: loggedInUserId,
+                          );
+                          await db.updateGift(updatedGift);
+                          setState(() {
+                            widget.gift.status = 'Pledged';
+                            widget.gift.pledgerId = loggedInUserId;
+                          });
+                        },
                         child: Text(
                           'Pledge This Gift',
                           style: theme.textTheme.labelLarge?.copyWith(
@@ -222,5 +251,20 @@ class _GiftDetailsState extends State<GiftDetails> {
         ),
       ),
     );
+  }
+
+  Future<void> _saveChanges(Gift gift) async {
+    Gift updatedGift = gift.copyWith(
+      name: _nameController.text,
+      price: double.parse(_priceController.text),
+      description: _descriptionController.text,
+      category: _categoryController.text,
+    );
+    await db.updateGift(updatedGift);
+    widget.gift.name = _nameController.text;
+    widget.gift.price = double.parse(_priceController.text);
+    widget.gift.description = _descriptionController.text;
+    widget.gift.category = _categoryController.text;
+    toggleEditMode();
   }
 }
