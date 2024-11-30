@@ -1,15 +1,24 @@
-import 'package:celebratio/event_details_page.dart';
-import 'package:celebratio/globals.dart';
 import 'package:celebratio/incoming_gifts_page.dart';
-import 'package:celebratio/OutGifts.dart';
+import 'package:celebratio/outgoing_gifts_page.dart';
 import 'package:celebratio/Profile.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_ui_auth/firebase_ui_auth.dart';
 import 'package:flutter/material.dart';
-
+import 'package:provider/provider.dart';
+import 'package:go_router/go_router.dart';
+import 'Authentication/authentication.dart';
+import 'app_state.dart';
 import 'events_page.dart';
 import 'friends_page.dart';
 
-void main() {
-  runApp(const MyApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
+  runApp(ChangeNotifierProvider(
+    create: (context) => ApplicationState(),
+    builder: (context, child) => const MyApp(),
+  ));
 }
 
 class MyApp extends StatelessWidget {
@@ -18,19 +27,18 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return MaterialApp.router(
       debugShowCheckedModeBanner: false,
-      routes: {
-        '/Friends': (context) => Friends(),
-        '/Profile':(context) => Profile(),
-      },
       title: 'Celebratio',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed( // 0xFF10375C
-            seedColor: Color(0xFF10375C), brightness: Brightness.light),
+        colorScheme: ColorScheme.fromSeed(
+            // 0xFF10375C
+            seedColor: Color(0xFF10375C),
+            brightness: Brightness.light),
         useMaterial3: true,
       ),
-      home: const MyHomePage(),
+      // home: const MyHomePage(),
+      routerConfig: _router,
     );
   }
 }
@@ -52,6 +60,7 @@ class _MyHomePageState extends State<MyHomePage> {
   ];
   var _selectedIdx = 1;
 
+
   String getGreeting() {
     var now = DateTime.now();
     int hour = now.hour;
@@ -69,17 +78,22 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final bool isLoggedIn = Provider.of<ApplicationState>(context).loggedIn;
+
     var theme = Theme.of(context);
     var style = theme.textTheme.displayMedium!.copyWith(
       color: theme.colorScheme.primary,
     );
-    const radius = 20.0;
+
     return Scaffold(
-      backgroundColor: Colors.black,
-      body: _selectedIdx == 0 || _selectedIdx == 1 || _selectedIdx == 3 || _selectedIdx == 4
+      body: isLoggedIn? _selectedIdx == 0 ||
+              _selectedIdx == 1 ||
+              _selectedIdx == 3 ||
+              _selectedIdx == 4
           ? pages[_selectedIdx]
-          : pages[1],
-      bottomNavigationBar: NavigationBar(
+          : pages[1]
+      :  const SignInWidget(),
+      bottomNavigationBar: isLoggedIn? NavigationBar(
         destinations: const [
           NavigationDestination(
               icon: Icon(Icons.calendar_month_rounded), label: 'Events'),
@@ -95,117 +109,95 @@ class _MyHomePageState extends State<MyHomePage> {
           _selectedIdx = index;
           setState(() {});
         },
-      ),
+      ): null,
+    );
+
+  }
+}
+
+final _router = GoRouter(
+  routes: [
+    GoRoute(
+      path: '/',
+      builder: (context, state) => const MyHomePage(),
+      routes: [
+        GoRoute(
+          path: 'sign-in',
+          builder: (context, state) {
+            return const SignInWidget();
+          },
+          routes: [
+            GoRoute(
+              path: 'forgot-password',
+              builder: (context, state) {
+                final arguments = state.uri.queryParameters;
+                return ForgotPasswordScreen(
+                  email: arguments['email'],
+                  headerMaxExtent: 200,
+                );
+              },
+            ),
+          ],
+        ),
+        GoRoute(
+          path: 'profile',
+          builder: (context, state) {
+            return ProfileScreen(
+              providers: const [],
+              actions: [
+                SignedOutAction((context) {
+                  context.pushReplacement('/');
+                }),
+              ],
+            );
+          },
+        ),
+      ],
+    ),
+    GoRoute(path: '/profile', builder: (context, state) => const Profile()),
+  ],
+);
+
+class SignInWidget extends StatelessWidget {
+  const SignInWidget({
+    super.key,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SignInScreen(
+      actions: [
+        ForgotPasswordAction(((context, email) {
+          final uri = Uri(
+            path: '/sign-in/forgot-password',
+            queryParameters: <String, String?>{
+              'email': email,
+            },
+          );
+          context.push(uri.toString());
+        })),
+        AuthStateChangeAction(((context, state) {
+          final user = switch (state) {
+            SignedIn state => state.user,
+            UserCreated state => state.credential.user,
+            _ => null
+          };
+          if (user == null) {
+            return;
+          }
+          if (state is UserCreated) {
+            user.updateDisplayName(user.email!.split('@')[0]);
+          }
+          if (!user.emailVerified) {
+            user.sendEmailVerification();
+            const snackBar = SnackBar(
+                content: Text(
+                    'Please check your email to verify your email address'));
+            ScaffoldMessenger.of(context).showSnackBar(snackBar);
+          }
+          context.pushReplacement('/');
+        })),
+      ],
     );
   }
-
-// // this is going to be deleted //https://colorhunt.co/palette/f4f6fff3c623eb831710375c
-//   Widget homeColumn(
-//       ThemeData theme, double radius, TextStyle style, BuildContext context) {
-//     return Scaffold(
-//       appBar: AppBar(
-//         leading: IconButton(
-//           icon: const Icon(Icons.account_circle),
-//           onPressed: () {},
-//         ),
-//         title: Text(
-//           'Celebratio',
-//           style: TextStyle(color: theme.primaryColor),
-//         ),
-//         actions: [
-//           ElevatedButton.icon(
-//             onPressed: () {},
-//             label: const Text('New Event'),
-//             icon: const Icon(Icons.add),
-//           ),
-//         ],
-//       ),
-//       body: Column(
-//         mainAxisSize: MainAxisSize.max,
-//         crossAxisAlignment: CrossAxisAlignment.stretch,
-//         children: [
-//           Padding(
-//             padding: const EdgeInsets.all(8.0),
-//             child: Text(
-//               '${getGreeting()}, Ahmed',
-//               style:
-//                   theme.textTheme.displaySmall?.copyWith(color: Colors.black54),
-//             ),
-//           ),
-//           Expanded(
-//             child: Padding(
-//               padding: const EdgeInsets.all(8.0),
-//               child: ElevatedButton(
-//                 onPressed: () {},
-//                 style: ElevatedButton.styleFrom(
-//                     backgroundColor: const Color(0xFF10375C),
-//                     //const Color(0xFFB7E0FF),
-//                     shape: RoundedRectangleBorder(
-//                       borderRadius: BorderRadius.circular(radius),
-//                     )),
-//                 child: Text(
-//                   'My Events',
-//                   style: style.copyWith(fontWeight: FontWeight.bold,color: Colors.white),
-//                 ),
-//               ),
-//             ),
-//           ),
-//           Expanded(
-//             child: Padding(
-//               padding: const EdgeInsets.all(8.0),
-//               child: ElevatedButton(
-//                 onPressed: () {
-//                   Navigator.pushNamed(context, '/Friends',
-//                       arguments: {'colorCode': '0xFFFFF5CD'});
-//                 },
-//                 style: ElevatedButton.styleFrom(
-//                     backgroundColor: const Color(0xFF10375C), // const Color(0xFFFFF5CD),
-//                     shape: RoundedRectangleBorder(
-//                       borderRadius: BorderRadius.circular(radius),
-//                     )),
-//                 child: Text(
-//                   'Friends',
-//                   style: style.copyWith(fontWeight: FontWeight.bold,color: Colors.white),
-//                 ),
-//               ),
-//             ),
-//           ),
-//           Expanded(
-//             child: Padding(
-//               padding: const EdgeInsets.all(8.0),
-//               child: ElevatedButton(
-//                 onPressed: () {},
-//                 style: ElevatedButton.styleFrom(
-//                     backgroundColor:const Color(0xFF10375C), //const Color(0xFFFFCFB3),
-//                     shape: RoundedRectangleBorder(
-//                       borderRadius: BorderRadius.circular(radius),
-//                     )),
-//                 child: Text(
-//                   'Gifts Out',
-//                   style: style.copyWith(fontWeight: FontWeight.bold, color: Colors.white),
-//                 ),
-//               ),
-//             ),
-//           ),
-//           Expanded(
-//             child: Padding(
-//               padding: const EdgeInsets.all(8.0),
-//               child: ElevatedButton(
-//                 onPressed: () {},
-//                 style: ElevatedButton.styleFrom(
-//                     backgroundColor: const Color(0xFF10375C), //const Color(0xFFE78F81),
-//                     shape: RoundedRectangleBorder(
-//                       borderRadius: BorderRadius.circular(radius),
-//                     )),
-//                 child: Text(
-//                   'Gifts In',
-//                   style: style.copyWith(fontWeight: FontWeight.bold,color : Colors.white),
-//                 ),
-//               ),
-//             ),
-//           ),
-//         ],
-//       ),
-//     );
-//   }
 }
