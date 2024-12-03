@@ -1,4 +1,6 @@
+import 'package:celebratio/Authentication/authentication.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 class CustomWidget extends StatefulWidget {
   final Widget? topWidget;
@@ -116,7 +118,7 @@ class _CustomWidgetState extends State<CustomWidget> {
             IconButton(
               icon: const Icon(Icons.account_circle),
               onPressed: () {
-                Navigator.pushNamed(context, '/Profile');
+                context.go('/profile');
               },
             ),
         title: Text(

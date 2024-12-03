@@ -1,13 +1,17 @@
 import 'package:celebratio/Model/event.dart';
+import 'package:celebratio/Model/fb_event.dart';
+import 'package:celebratio/Model/fb_gift.dart';
 import 'package:celebratio/gift_details_page.dart';
 import 'package:celebratio/Model/gift.dart';
-import 'package:celebratio/globals.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'CustomWidget.dart';
 import 'Model/local_db.dart';
+import 'app_state.dart';
 
 class EventDetails extends StatefulWidget {
-  final Event eventData;
+  final FbEvent eventData;
 
   const EventDetails({super.key, required this.eventData});
 
@@ -18,12 +22,12 @@ class EventDetails extends StatefulWidget {
 }
 
 class _EventDetailsState extends State<EventDetails> {
+  var loggedInUserId = FirebaseAuth.instance.currentUser!.uid;
   final db = DataBase();
   String selectedFilter = 'All'; // Tracks the current filter
-  List<Gift> allGifts = []; // Replace with your gifts data
-  List<Gift> filteredGifts = [];
+  List<FbGift> allGifts = []; // Replace with your gifts data
+  List<FbGift> filteredGifts = [];
   String sortType = "";
-  String _eventCreator = "";
 
   void _filterGifts() {
     setState(() {
@@ -47,32 +51,20 @@ class _EventDetailsState extends State<EventDetails> {
     });
   }
 
-  _setCreatorName() async {
-    var user = await db.getUserById(widget.eventData.userId!);
-    setState(() {
-      _eventCreator = user.name;
-    });
-  }
-
   _fetchGifts() async {
     try {
-      var temp = await db.getGiftsByEventId(widget.eventData.id!);
+      // var temp = await db.getGiftsByEventId(widget.eventData.id!);
+      var appState = Provider.of<ApplicationState>(context, listen: false);
+      var temp = await appState.getGiftsByEventId(widget.eventData.id);
       setState(() {
-        allGifts = List<Gift>.from(temp);
+        allGifts = List.from(temp);
         _filterGifts();
       });
     } catch (e) {
-      // print('Error fetching gifts: $e');
+       print('Error fetching gifts: $e');
     }
   }
 
-  Future<String> _getPledgerName(int? id) async {
-    if (id == null) {
-      return 'No one';
-    }
-    var user = await db.getUserById(id);
-    return user.name;
-  }
 
   void _addNewGift() {
     final TextEditingController nameController = TextEditingController();
@@ -140,38 +132,25 @@ class _EventDetailsState extends State<EventDetails> {
                   try {
                     // Parse price
                     final double price = double.parse(priceController.text);
-
-                    // Create gift object
-                    Gift gift = Gift(
-                      id: null,
-                      name: nameController.text,
-                      description: descriptionController.text,
-                      category: categoryController.text,
-                      price: price,
-                      status: 'Available',
-                      eventId: widget.eventData.id!,
-                      pledgerId: null,
-                    );
-
-                    // Insert gift into the database
-                    final response = await db.insertNewGift(gift);
-                    gift.id = response;
-
-                    if (response > 0) {
-                      setState(() {
-                        allGifts.add(gift);
-                        _filterGifts();
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                              content: Text('Gift added successfully')),
-                        );
-                      });
-                      if (context.mounted) {
-                        Navigator.of(context).pop();
-                      } // Close the dialog
-                    } else {
-                      throw Exception('Failed to insert gift');
-                    }
+                    var appState =
+                        Provider.of<ApplicationState>(context, listen: false);
+                    appState.addGift(
+                        eventId: widget.eventData.id,
+                        name: nameController.text,
+                        description: descriptionController.text,
+                        category: categoryController.text,
+                        price: price);
+                    setState(() {
+                      // allGifts.add(gift);
+                      _fetchGifts();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                            content: Text('Gift added successfully')),
+                      );
+                    });
+                    if (context.mounted) {
+                      Navigator.of(context).pop();
+                    } // Close the dialog
                   } catch (e) {
                     print(e);
                     // Show error message if database operation fails
@@ -198,7 +177,6 @@ class _EventDetailsState extends State<EventDetails> {
   @override
   void initState() {
     super.initState();
-    _setCreatorName();
     _fetchGifts();
     _filterGifts(); // Initialize the filtered list
   }
@@ -213,7 +191,7 @@ class _EventDetailsState extends State<EventDetails> {
           location: currentEvent.location,
           date: currentEvent.date.toString(),
           description: currentEvent.description,
-          createdBy: _eventCreator),
+          createdBy: widget.eventData.createdBy),
       filterButtons: [
         FilterButton(
             label: 'All',
@@ -274,14 +252,13 @@ class _EventDetailsState extends State<EventDetails> {
                   context,
                   MaterialPageRoute(
                       builder: (context) => GiftDetails(
-                            gift: gift,giftOwnerId: currentEvent.userId!,
-                          ))).then(
-                  (value){
-                    _fetchGifts();
-                  }
-              );
+                            gift: gift,
+                            giftOwnerId: currentEvent.createdBy,
+                          ))).then((value) {
+                _fetchGifts();
+              });
             },
-            onLongPress: currentEvent.userId == loggedInUserId
+            onLongPress: currentEvent.createdBy == loggedInUserId
                 ? () {
                     if (gift.status == 'Available') {
                       showModalBottomSheet(
@@ -290,13 +267,19 @@ class _EventDetailsState extends State<EventDetails> {
                           return Wrap(
                             children: <Widget>[
                               ListTile(
-                                leading: Icon(Icons.delete),
-                                title: Text('Delete'),
+                                leading: const Icon(Icons.delete),
+                                title: const Text('Delete'),
                                 onTap: () async {
-                                  await db.deleteGiftById(gift.id!);
+                                  var appState = Provider.of<ApplicationState>(
+                                      context,
+                                      listen: false);
+                                  await appState.deleteGift(giftId: gift.id);
+                                  // await db.deleteGiftById(gift.id!);
                                   allGifts.remove(gift);
-                                  _filterGifts();
-                                  Navigator.pop(context);
+                                  _fetchGifts();
+                                  if (context.mounted) {
+                                    Navigator.pop(context);
+                                  }
                                 },
                               ),
                             ],
@@ -309,16 +292,7 @@ class _EventDetailsState extends State<EventDetails> {
             title: Text(
               gift.name,
             ),
-            subtitle: FutureBuilder(
-                initialData: "",
-                future: _getPledgerName(gift.pledgerId),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.done) {
-                    return Text('${snapshot.data} has pledged this gift');
-                  } else {
-                    return const Text('');
-                  }
-                }),
+            subtitle: Text(gift.pledgedBy ?? 'No one has pledged this gift'),
             trailing: Stack(
               alignment: Alignment.center,
               children: [
@@ -333,7 +307,7 @@ class _EventDetailsState extends State<EventDetails> {
         );
       },
       itemCount: filteredGifts.length,
-      newButton: currentEvent.userId == loggedInUserId
+      newButton: currentEvent.createdBy == loggedInUserId
           ? NewButton(
               label: 'New Gift',
               onPressed: () {

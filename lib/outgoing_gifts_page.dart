@@ -1,11 +1,13 @@
 import 'package:celebratio/CustomWidget.dart';
+import 'package:celebratio/Model/fb_pledged_gift.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'dart:developer';
 
 import 'Model/gift_details.dart';
 import 'Model/local_db.dart';
+import 'app_state.dart';
 import 'gift_details_page.dart';
-import 'globals.dart';
 
 class OutGifts extends StatefulWidget {
   const OutGifts({super.key});
@@ -15,8 +17,7 @@ class OutGifts extends StatefulWidget {
 }
 
 class _OutGiftsState extends State<OutGifts> {
-  final db = DataBase();
-  List<GiftDetailsModel> outgoingGifts = [];
+  List<PledgedGift> outgoingGifts = [];
 
   @override
   void initState() {
@@ -26,7 +27,9 @@ class _OutGiftsState extends State<OutGifts> {
 
   Future<void> _fetchOutgoingGifts() async {
     try {
-      var temp = await db.getOutgoingGiftsWithDetails(loggedInUserId);
+      // var temp = await db.getOutgoingGiftsWithDetails(loggedInUserId);
+      var appState = Provider.of<ApplicationState>(context, listen: false);
+      var temp = await appState.getMyPledgedGifts();
       temp = temp.where((gift) {
         final now = DateTime.now();
         final today = DateTime(now.year, now.month, now.day); // strip time
@@ -69,7 +72,7 @@ class _OutGiftsState extends State<OutGifts> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(giftDetail.eventName),
-              Text('Event hosted by: ${giftDetail.hostName}'),
+              Text('Event hosted by: ${giftDetail.eventHost}'),
             ],
           ),
           onTap: () {
@@ -78,7 +81,7 @@ class _OutGiftsState extends State<OutGifts> {
                 MaterialPageRoute(
                     builder: (context) => GiftDetails(
                           gift: giftDetail.gift,
-                          giftOwnerId: giftDetail.hostId!,
+                          giftOwnerId: giftDetail.eventHost,
                         )));
           },
         );

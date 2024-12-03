@@ -1,12 +1,15 @@
-import 'package:celebratio/globals.dart';
+import 'package:celebratio/Model/fb_gift.dart';
+import 'package:celebratio/app_state.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import 'Model/gift.dart';
 import 'Model/local_db.dart';
 
 class GiftDetails extends StatefulWidget {
-  final Gift gift;
-  final int giftOwnerId;
+  final FbGift gift;
+  final String giftOwnerId;
 
   const GiftDetails({super.key, required this.gift, required this.giftOwnerId});
 
@@ -15,6 +18,7 @@ class GiftDetails extends StatefulWidget {
 }
 
 class _GiftDetailsState extends State<GiftDetails> {
+  var loggedInUserId = FirebaseAuth.instance.currentUser!.uid;
   final db = DataBase();
   bool isEditing = false;
   final TextEditingController _nameController = TextEditingController();
@@ -226,15 +230,26 @@ class _GiftDetailsState extends State<GiftDetails> {
                           ),
                         ),
                         onPressed: () async {
-                          Gift updatedGift = gift.copyWith(
-                            status: 'Pledged',
-                            pledgerId: loggedInUserId,
-                          );
-                          await db.updateGift(updatedGift);
+                          var appState = Provider.of<ApplicationState>(context,
+                              listen: false);
+                          appState.editGift(giftId: gift.id, updatedData: {
+                            'status': 'Pledged',
+                            'pledgedBy': loggedInUserId,
+                          });
                           setState(() {
                             widget.gift.status = 'Pledged';
-                            widget.gift.pledgerId = loggedInUserId;
+                            widget.gift.pledgedBy = loggedInUserId;
                           });
+
+                          // Gift updatedGift = gift.copyWith(
+                          //   status: 'Pledged',
+                          //   pledgerId: loggedInUserId,
+                          // );
+                          // await db.updateGift(updatedGift);
+                          // setState(() {
+                          //   widget.gift.status = 'Pledged';
+                          //   widget.gift.pledgerId = loggedInUserId;
+                          // });
                         },
                         child: Text(
                           'Pledge This Gift',
@@ -253,14 +268,24 @@ class _GiftDetailsState extends State<GiftDetails> {
     );
   }
 
-  Future<void> _saveChanges(Gift gift) async {
-    Gift updatedGift = gift.copyWith(
-      name: _nameController.text,
-      price: double.parse(_priceController.text),
-      description: _descriptionController.text,
-      category: _categoryController.text,
+  Future<void> _saveChanges(FbGift gift) async {
+    var appState = Provider.of<ApplicationState>(context, listen: false);
+    await appState.editGift(
+      giftId: gift.id,
+      updatedData: {
+        'name': _nameController.text,
+        'price': double.parse(_priceController.text),
+        'description': _descriptionController.text,
+        'category': _categoryController.text,
+      },
     );
-    await db.updateGift(updatedGift);
+    // Gift updatedGift = gift.copyWith(
+    //   name: _nameController.text,
+    //   price: double.parse(_priceController.text),
+    //   description: _descriptionController.text,
+    //   category: _categoryController.text,
+    // );
+    // await db.updateGift(updatedGift);
     widget.gift.name = _nameController.text;
     widget.gift.price = double.parse(_priceController.text);
     widget.gift.description = _descriptionController.text;

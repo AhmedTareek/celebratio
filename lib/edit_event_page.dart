@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 
 import 'Model/event.dart';
+import 'Model/fb_event.dart';
 import 'Model/local_db.dart';
+import 'app_state.dart';
 
 class EditEventPage extends StatefulWidget {
-  final Event event;
+  final FbEvent event;
 
   const EditEventPage({super.key, required this.event});
 
@@ -34,16 +37,18 @@ class _EditEventPageState extends State<EditEventPage> {
   void _updateEvent() async {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
-      Event updatedEvent = widget.event.copyWith(
-        name: name,
-        description: description,
-        date: date,
-        location: location,
-        category: category,
-        id: widget.event.id,
-      );
-      await DataBase().updateEvent(updatedEvent); // Update in DB
-      Navigator.pop(context); // Return to the previous screen
+      var appState = Provider.of<ApplicationState>(context, listen: false);
+      await appState.editEvent(eventId: widget.event.id, updatedData: {
+        'name': name,
+        'description': description,
+        'date': date.toIso8601String(),
+        'location': location,
+        'category': category,
+      });
+
+      if (mounted) {
+        Navigator.pop(context); // Return to the previous screen
+      }
     }
   }
 

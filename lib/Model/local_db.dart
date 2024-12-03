@@ -1,5 +1,5 @@
 import 'package:celebratio/Model/event.dart';
-import 'package:celebratio/Model/user.dart';
+import 'package:celebratio/Model/friend.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 
@@ -150,7 +150,7 @@ class DataBase {
 
   // User functions
 
-  insertNewUser(User userData) async {
+  insertNewUser(Friend userData) async {
     Database? myData = await myDataBase;
     int response = await myData!.insert('users', userData.toMap());
     return response;
@@ -159,7 +159,7 @@ class DataBase {
   getAllUsers() async {
     Database? myData = await myDataBase;
     List<Map<String, dynamic>> response = await myData!.query('users');
-    List<User> users = response.map((e) => User.fromJson(e)).toList();
+    List<Friend> users = response.map((e) => Friend.fromJson(e)).toList();
     return users;
   }
 
@@ -167,7 +167,7 @@ class DataBase {
     Database? myData = await myDataBase;
     var response = await myData!.query(
         'users', where: 'id = ?', whereArgs: [id]);
-    User user = User.fromJson(response.first);
+    Friend user = Friend.fromJson(response.first);
     return user;
   }
 
@@ -179,13 +179,13 @@ class DataBase {
     return response;
   }
 
-  getGiftsByEventId(int id) async {
-    Database? myData = await myDataBase;
-    var response = await myData!.query(
-        'gifts', where: 'eventId = ?', whereArgs: [id]);
-    List<Gift> gifts = response.map((e) => Gift.fromJson(e)).toList();
-    return gifts;
-  }
+  // getGiftsByEventId(int id) async {
+  //   Database? myData = await myDataBase;
+  //   var response = await myData!.query(
+  //       'gifts', where: 'eventId = ?', whereArgs: [id]);
+  //   List<Gift> gifts = response.map((e) => Gift.fromJson(e)).toList();
+  //   return gifts;
+  // }
 
   deleteGiftById(int id) async {
     Database? myData = await myDataBase;
@@ -204,45 +204,25 @@ class DataBase {
     );
   }
 
-  getGiftsByPledgerId(int id) async {
-    Database? myData = await myDataBase;
-    var response = await myData!.query(
-        'gifts', where: 'pledgerId = ?', whereArgs: [id]);
-    List<Gift> gifts = response.map((e) => Gift.fromJson(e)).toList();
-    return gifts;
-  }
-
-  // get all gifts by user id where their pledger id is not null
-  getAllPledgedGiftsByUserId(int id) async {
-    Database? myData = await myDataBase;
-    var response = await myData!.query(
-        'gifts', where: 'eventId IN (SELECT id FROM events WHERE userId = ?) AND pledgerId IS NOT NULL',
-        whereArgs: [id]);
-    List<Gift> gifts = response.map((e) => Gift.fromJson(e)).toList();
-    return gifts;
-  }
-
-  Future<List<GiftDetailsModel>> getIncomingGiftsWithDetails(int userId) async {
-    Database? myData = await myDataBase;
-
-    final List<Map<String, dynamic>> result = await myData!.rawQuery('''
-      SELECT 
-        gifts.*,
-        events.name as eventName,
-        events.date as eventDate,
-        users.name as pledgerName
-      FROM gifts 
-      INNER JOIN events ON gifts.eventId = events.id
-      INNER JOIN users ON gifts.pledgerId = users.id
-      WHERE events.userId = ? 
-      AND gifts.pledgerId IS NOT NULL
-      ORDER BY events.date ASC
-    ''', [userId]);
-    print(result);
-    return result.map((map) => GiftDetailsModel.fromMap(map)).toList();
-  }
-
-  // Future<List<GiftDetailsModel>> getOutgoingGiftsWithDetails(int userId) async {
+  // getGiftsByPledgerId(int id) async {
+  //   Database? myData = await myDataBase;
+  //   var response = await myData!.query(
+  //       'gifts', where: 'pledgerId = ?', whereArgs: [id]);
+  //   List<Gift> gifts = response.map((e) => Gift.fromJson(e)).toList();
+  //   return gifts;
+  // }
+  //
+  // // get all gifts by user id where their pledger id is not null
+  // getAllPledgedGiftsByUserId(int id) async {
+  //   Database? myData = await myDataBase;
+  //   var response = await myData!.query(
+  //       'gifts', where: 'eventId IN (SELECT id FROM events WHERE userId = ?) AND pledgerId IS NOT NULL',
+  //       whereArgs: [id]);
+  //   List<Gift> gifts = response.map((e) => Gift.fromJson(e)).toList();
+  //   return gifts;
+  // }
+  //
+  // Future<List<GiftDetailsModel>> getIncomingGiftsWithDetails(int userId) async {
   //   Database? myData = await myDataBase;
   //
   //   final List<Map<String, dynamic>> result = await myData!.rawQuery('''
@@ -253,35 +233,38 @@ class DataBase {
   //       users.name as pledgerName
   //     FROM gifts
   //     INNER JOIN events ON gifts.eventId = events.id
-  //     INNER JOIN users ON events.userId = users.id
+  //     INNER JOIN users ON gifts.pledgerId = users.id
+  //     WHERE events.userId = ?
+  //     AND gifts.pledgerId IS NOT NULL
+  //     ORDER BY events.date ASC
+  //   ''', [userId]);
+  //   print(result);
+  //   return result.map((map) => GiftDetailsModel.fromMap(map)).toList();
+  // }
+  //
+  //
+  //
+  // Future<List<GiftDetailsModel>> getOutgoingGiftsWithDetails(int userId) async {
+  //   Database? myData = await myDataBase;
+  //
+  //   final List<Map<String, dynamic>> result = await myData!.rawQuery('''
+  //     SELECT
+  //       gifts.*,
+  //       events.name as eventName,
+  //       events.date as eventDate,
+  //       events.userId as hostId,
+  //       host.name as hostName,
+  //       pledger.name as pledgerName
+  //     FROM gifts
+  //     INNER JOIN events ON gifts.eventId = events.id
+  //     INNER JOIN users pledger ON gifts.pledgerId = pledger.id
+  //     INNER JOIN users host ON events.userId = host.id
   //     WHERE gifts.pledgerId = ?
   //     ORDER BY events.date ASC
   //   ''', [userId]);
   //
   //   return result.map((map) => GiftDetailsModel.fromMap(map)).toList();
   // }
-
-  Future<List<GiftDetailsModel>> getOutgoingGiftsWithDetails(int userId) async {
-    Database? myData = await myDataBase;
-
-    final List<Map<String, dynamic>> result = await myData!.rawQuery('''
-      SELECT 
-        gifts.*,
-        events.name as eventName,
-        events.date as eventDate,
-        events.userId as hostId,
-        host.name as hostName,
-        pledger.name as pledgerName
-      FROM gifts 
-      INNER JOIN events ON gifts.eventId = events.id
-      INNER JOIN users pledger ON gifts.pledgerId = pledger.id
-      INNER JOIN users host ON events.userId = host.id
-      WHERE gifts.pledgerId = ? 
-      ORDER BY events.date ASC
-    ''', [userId]);
-
-    return result.map((map) => GiftDetailsModel.fromMap(map)).toList();
-  }
 
 
 }

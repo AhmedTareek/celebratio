@@ -1,67 +1,43 @@
 class Gift {
-  int? id;
-  String name;
-  String description;
-  String category;
-  double price;
-  String status;
-  int eventId;
-  int? pledgerId;
+  final String id;
+  final String name;
+  final String description;
+  final String category;
+  final double price;
+  final String status;
+  final String eventId;
+  final String? pledgedBy;
 
-  Gift(
-      {this.id,
-      required this.name,
-      required this.description,
-      required this.category,
-      required this.price,
-      required this.status,
-      required this.eventId,
-      this.pledgerId});
+  Gift({
+    required this.id,
+    required this.name,
+    required this.description,
+    required this.category,
+    required this.price,
+    required this.status,
+    required this.eventId,
+    this.pledgedBy,
+  });
 
-  Gift copyWith({
-    int? id,
-    String? name,
-    String? description,
-    String? category,
-    double? price,
-    String? status,
-    int? eventId,
-    int? pledgerId,
-  }) {
-    return Gift(
-      id: id ?? this.id,
-      name: name ?? this.name,
-      description: description ?? this.description,
-      category: category ?? this.category,
-      price: price ?? this.price,
-      status: status ?? this.status,
-      eventId: eventId ?? this.eventId,
-      pledgerId: pledgerId ?? this.pledgerId,
-    );
-  }
+  Map<String, dynamic> toMap() => {
+    'id': id,
+    'name': name,
+    'description': description,
+    'category': category,
+    'price': price,
+    'status': status,
+    'eventId': eventId,
+    'pledgedBy': pledgedBy,
+  };
 
-  factory Gift.fromJson(Map<String, dynamic> json) {
-    return Gift(
-        name: json['name'],
-        description: json['description'],
-        category: json['category'],
-        price: json['price'],
-        status: json['status'],
-        eventId: json['eventId'],
-        id: json['id'],
-        pledgerId: json['pledgerId']);
-  }
-
-  Map<String, Object?> toMap() {
-    return {
-      'name': name,
-      'description': description,
-      'category': category,
-      'price': price,
-      'status': status,
-      'eventId': eventId,
-      'id': id,
-      'pledgerId': pledgerId
-    };
-  }
+  static Gift fromMap(Map<String, dynamic> map) => Gift(
+    id: map['id'],
+    name: map['name'],
+    description: map['description'],
+    category: map['category'],
+    price: map['price'],
+    status: map['status'],
+    eventId: map['eventId'],
+    pledgedBy: map['pledgedBy'],
+  );
 }

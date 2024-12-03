@@ -1,18 +1,20 @@
-class User {
+import 'package:cloud_firestore/cloud_firestore.dart';
+
+class Friend {
   String name;
   String email;
   String? preferences;
   int? id;
 
-  User({required this.name, required this.email, this.preferences, this.id});
+  Friend({required this.name, required this.email, this.preferences, this.id});
 
-  User copyWith({
+  Friend copyWith({
     String? name,
     String? email,
     String? preferences,
     int? id,
   }) {
-    return User(
+    return Friend(
       name: name ?? this.name,
       email: email ?? this.email,
       preferences: preferences ?? this.preferences,
@@ -20,8 +22,8 @@ class User {
     );
   }
 
-  factory User.fromJson(Map<String, dynamic> json) {
-    return User(
+  factory Friend.fromJson(Map<String, dynamic> json) {
+    return Friend(
       name: json['name'],
       email: json['email'],
       preferences: json['preferences'],
@@ -35,6 +37,24 @@ class User {
       'email': email,
       'preferences': preferences,
       'id': id,
+    };
+  }
+
+  factory Friend.fromFirestore(DocumentSnapshot doc) {
+    final data = doc.data() as Map<String, dynamic>;
+    return Friend(
+      name: data['name'] as String,
+      email: data['email'] as String,
+      preferences: data['preferences'] as String,
+      id: data['id'] as int,
+    );
+  }
+
+  Map<String, dynamic> toFirestore() {
+    return {
+      'name': name,
+      'email': email,
+      'preferences': preferences,
     };
   }
 

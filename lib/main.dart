@@ -1,6 +1,7 @@
 import 'package:celebratio/incoming_gifts_page.dart';
 import 'package:celebratio/outgoing_gifts_page.dart';
 import 'package:celebratio/Profile.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_ui_auth/firebase_ui_auth.dart';
@@ -176,7 +177,7 @@ class SignInWidget extends StatelessWidget {
           );
           context.push(uri.toString());
         })),
-        AuthStateChangeAction(((context, state) {
+        AuthStateChangeAction(((context, state) async {
           final user = switch (state) {
             SignedIn state => state.user,
             UserCreated state => state.credential.user,
@@ -187,6 +188,17 @@ class SignInWidget extends StatelessWidget {
           }
           if (state is UserCreated) {
             user.updateDisplayName(user.email!.split('@')[0]);
+            // Add the new user to the Firestore database
+            final userDocRef = FirebaseFirestore.instance.collection('users').doc(user.uid);
+
+            await userDocRef.set({
+              'name': user.displayName ?? user.email!.split('@')[0],
+              'email': user.email ?? '',
+              'phoneNumber': user.phoneNumber ?? '',
+              'friends': [],
+              'events': [],
+              'createdAt': FieldValue.serverTimestamp(),
+            });
           }
           if (!user.emailVerified) {
             user.sendEmailVerification();

@@ -1,8 +1,11 @@
 import 'package:celebratio/CustomWidget.dart';
+import 'package:celebratio/Model/fb_Friend.dart';
 import 'package:celebratio/Model/local_db.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
-import 'Model/user.dart';
+import 'Model/friend.dart';
+import 'app_state.dart';
 import 'events_page.dart';
 
 class Friends extends StatefulWidget {
@@ -13,10 +16,9 @@ class Friends extends StatefulWidget {
 }
 
 class _FriendsState extends State<Friends> {
-  final db = DataBase();
   final TextEditingController _searchController = TextEditingController();
-  List<User> allFriends = []; // Example data
-  List<User> filteredFriends = [];
+  List<FbFriend> allFriends = []; // Example data
+  List<FbFriend> filteredFriends = [];
 
   _filterFriends() {
     String query = _searchController.text.toLowerCase();
@@ -28,10 +30,11 @@ class _FriendsState extends State<Friends> {
   }
 
   _fetchFriends() async {
+    var appState = Provider.of<ApplicationState>(context, listen: false);
     try {
-      var temp = await db.getAllUsers();
+      var temp = await appState.getFriends();
       setState(() {
-        allFriends = List<User>.from(temp);
+        allFriends = temp.toList();
         _filterFriends();
       });
     } catch (e) {
@@ -82,25 +85,9 @@ class _FriendsState extends State<Friends> {
                 if (nameController.text.isNotEmpty &&
                     emailController.text.isNotEmpty) {
                   try {
-                    // Create user object
-                    User user = User(
-                        name: nameController.text, email: emailController.text);
-                    // Insert user into the database
-                    final response = await db.insertNewUser(user);
-                    user.id = response;
-                    if (response > 0) {
-                      setState(() {
-                        allFriends.add(user);
-                        _filterFriends();
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                              content: Text('User added successfully')),
-                        );
-                      });
-                      Navigator.pop(context); // Close the dialog
-                    } else {
-                      throw Exception('Failed to insert user');
-                    }
+                    var appState =
+                        Provider.of<ApplicationState>(context, listen: false);
+                    appState.addFriend(email: emailController.text);
                   } catch (e) {
                     print(e);
                     // Show error message if database operation fails
@@ -166,59 +153,62 @@ class _FriendsState extends State<Friends> {
             leading: CircleAvatar(),
             title: Text(filteredFriends[index].name),
             subtitle: const Text('Hello, I am using Celebratio'),
-            trailing: FutureBuilder<String>(
-              future: _getUpcomingEventsCount(filteredFriends[index].id!),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const SizedBox(); // Loading
-                } else if (snapshot.hasError || snapshot.data == null || snapshot.data!.isEmpty) {
-                  return const SizedBox(); // No notification
-                } else {
-                  if(snapshot.data == '0') {
-                    return const SizedBox(); // No notification
-                  }
-                  return Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      CircleAvatar(
-                        radius: 15,
-                        backgroundColor: Theme.of(context).secondaryHeaderColor,
-                      ),
-                      Positioned(
-                        child: Text(
-                          snapshot.data.toString(), // Notification number
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ],
-                  );
-                }
-              },
-            ),
+            // trailing: FutureBuilder<String>(
+            //   future: _getUpcomingEventsCount(filteredFriends[index].id!),
+            //   builder: (context, snapshot) {
+            //     if (snapshot.connectionState == ConnectionState.waiting) {
+            //       return const SizedBox(); // Loading
+            //     } else if (snapshot.hasError || snapshot.data == null || snapshot.data!.isEmpty) {
+            //       return const SizedBox(); // No notification
+            //     } else {
+            //       if(snapshot.data == '0') {
+            //         return const SizedBox(); // No notification
+            //       }
+            //       return Stack(
+            //         alignment: Alignment.center,
+            //         children: [
+            //           CircleAvatar(
+            //             radius: 15,
+            //             backgroundColor: Theme.of(context).secondaryHeaderColor,
+            //           ),
+            //           Positioned(
+            //             child: Text(
+            //               snapshot.data.toString(), // Notification number
+            //               style: const TextStyle(
+            //                 fontWeight: FontWeight.bold,
+            //               ),
+            //             ),
+            //           ),
+            //         ],
+            //       );
+            //     }
+            //   },
+            // ),
             onTap: () {
               // navigate to events page with friend's id
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) =>
-                      EventsPage(userId: filteredFriends[index].id),
+                  builder: (context) => EventsPage(
+                    userUid: filteredFriends[index].id,
+                    userDisplayName: filteredFriends[index].name,
+                  ), // to be handled in events_page.dart
                 ),
               );
             },
           );
         },
-
         itemCount: filteredFriends.length);
   }
 
   Future<String> _getUpcomingEventsCount(int userId) async {
-    try {
-      var count = await db.getUpcomingEventsCountByUserId(userId);
-      return count.toString();
-    } catch (e) {
-      return '';
-    }
+    // try {
+    //   var count = await db.getUpcomingEventsCountByUserId(userId);
+    //   return count.toString();
+    // } catch (e) {
+    //   return '';
+    // }
+
+    return '';
   }
 }

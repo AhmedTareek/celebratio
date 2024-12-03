@@ -1,12 +1,13 @@
 import 'package:celebratio/CustomWidget.dart';
-import 'package:celebratio/globals.dart';
+import 'package:celebratio/Model/fb_pledged_gifts_to_me.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-
+import 'package:provider/provider.dart';
 
 import 'Model/gift_details.dart';
 import 'Model/local_db.dart';
+import 'app_state.dart';
 import 'gift_details_page.dart';
-
 
 class InGifts extends StatefulWidget {
   const InGifts({super.key});
@@ -16,8 +17,7 @@ class InGifts extends StatefulWidget {
 }
 
 class _InGiftsState extends State<InGifts> {
-  final db = DataBase();
-  List<GiftDetailsModel> incomingGifts = [];
+  List<PledgedGiftToMe> incomingGifts = [];
 
   @override
   void initState() {
@@ -27,7 +27,9 @@ class _InGiftsState extends State<InGifts> {
 
   Future<void> _fetchIncomingGifts() async {
     try {
-      var temp = await db.getIncomingGiftsWithDetails(loggedInUserId);
+      var appState = Provider.of<ApplicationState>(context, listen: false);
+      var temp = await appState.getGiftsToBeGivenToMe();
+      // var temp = await db.getIncomingGiftsWithDetails(loggedInUserId);
       // filter temp based on the event date being today or after
       temp = temp.where((gift) {
         final now = DateTime.now();
@@ -72,7 +74,7 @@ class _InGiftsState extends State<InGifts> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(giftDetail.eventName),
-              Text('Pledged by: ${giftDetail.pledgerName}'),
+              Text('Pledged by: ${giftDetail.pledgedBy}'),
             ],
           ),
           onTap: () {
@@ -80,7 +82,8 @@ class _InGiftsState extends State<InGifts> {
                 context,
                 MaterialPageRoute(
                     builder: (context) => GiftDetails(
-                        giftOwnerId: loggedInUserId, gift: giftDetail.gift)));
+                        giftOwnerId: FirebaseAuth.instance.currentUser!.uid,
+                        gift: giftDetail.gift)));
           },
         );
       },

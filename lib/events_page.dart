@@ -1,43 +1,55 @@
 import 'package:celebratio/CustomWidget.dart';
 import 'package:celebratio/Model/event.dart';
+import 'package:celebratio/Model/fb_event.dart';
 import 'package:celebratio/event_details_page.dart';
-import 'package:celebratio/globals.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 
+import 'app_state.dart';
 import 'edit_event_page.dart';
 import 'Model/local_db.dart';
 
 class EventsPage extends StatefulWidget {
-  final int? userId;
+  final String? userUid;
+  final String? userDisplayName;
 
-  const EventsPage({super.key, this.userId});
+  const EventsPage({super.key, this.userUid, this.userDisplayName});
 
   @override
   State<EventsPage> createState() => _EventState();
 }
 
 class _EventState extends State<EventsPage> {
+  final loggedInUserId = FirebaseAuth.instance.currentUser!.uid;
   final db = DataBase();
   int selectedButtonIndex = 0;
   String sortType = "";
   final DateTime today = DateTime.now();
-  var user;
-  List<Event> filteredEvents = [];
-  List<Event> allEvents = [];
+  List<FbEvent> filteredEvents = [];
+  List<FbEvent> allEvents = [];
+
+  // var user =  FirebaseAuth.instance.currentUser!;
+  var currUid;
 
   Future<void> fetchEvents() async {
-    try {
-      user ?? (user = await db.getUserById(widget.userId ?? loggedInUserId));
-      var temp = await db.getEventsByUserId(user.id!);
-      setState(() {
-        allEvents = List<Event>.from(temp);
-        _filterEvents();
-      });
-      print('fetched events $allEvents');
-    } catch (e) {
-      // print('Error fetching events: $e');
+    List<FbEvent> friendsEvents;
+    var appState = Provider.of<ApplicationState>(context, listen: false);
+
+    if (currUid == null) {
+      if (widget.userUid != null) {
+        currUid = widget.userUid;
+      } else {
+        currUid = FirebaseAuth.instance.currentUser!.uid;
+      }
     }
+
+    friendsEvents = await appState.getEventsByFriendId(currUid);
+    setState(() {
+      allEvents = friendsEvents.toList();
+      _filterEvents();
+    });
   }
 
   void _filterEvents() {
@@ -93,7 +105,9 @@ class _EventState extends State<EventsPage> {
               title: const Text('Delete'),
               onTap: () {
                 try {
-                  db.deleteEventById(filteredEvents[index].id!);
+                  var appState =
+                      Provider.of<ApplicationState>(context, listen: false);
+                  appState.deleteEvent(eventId: filteredEvents[index].id);
                   allEvents.remove(filteredEvents[index]);
                   _filterEvents();
                 } catch (e) {
@@ -194,29 +208,26 @@ class _EventState extends State<EventsPage> {
                     descriptionController.text.isNotEmpty &&
                     categoryController.text.isNotEmpty) {
                   try {
-                    var event = Event(
+                    var appState =
+                        Provider.of<ApplicationState>(context, listen: false);
+                    await appState.addEvent(
                         name: nameController.text,
                         description: descriptionController.text,
                         date: selectedDate!,
                         location: locationController.text,
-                        category: categoryController.text,
-                        userId: loggedInUserId);
-                    final response = await db.insertNewEvent(event);
-                    event.id = response;
-                    if (response > 0) {
-                      // Add to list if database insert was successful
-                      setState(() {
-                        allEvents.add(event);
-                        _filterEvents(); // Refresh the filtered list
-                      });
-                      Navigator.pop(context); // Close the dialog
-                      // Show success message
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Event added successfully')),
-                      );
-                    } else {
-                      throw Exception('Failed to insert data');
-                    }
+                        category: categoryController.text);
+                    // final response = await db.insertNewEvent(event);
+
+                    // Add to list if database insert was successful
+                    setState(() {
+                      // allEvents.add(event);
+                      fetchEvents(); // Refresh the filtered list
+                    });
+                    Navigator.pop(context); // Close the dialog
+                    // Show success message
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Event added successfully')),
+                    );
                   } catch (e) {
                     print(e);
                     // Show error message if database operation fails
@@ -240,13 +251,13 @@ class _EventState extends State<EventsPage> {
   }
 
   String _setAppBarTitle() {
-    if (user == null) {
+    if (currUid == null) {
       return 'Events';
     }
-    if (user.id == loggedInUserId) {
+    if (currUid == loggedInUserId) {
       return 'My Events';
     }
-    return user.name + "'s Events";
+    return widget.userDisplayName ?? '' + "'s Events";
   }
 
   @override
@@ -261,7 +272,7 @@ class _EventState extends State<EventsPage> {
     return CustomWidget(
         title: _setAppBarTitle(),
         // disable new button for events not created by the logged in user
-        newButton: user?.id == loggedInUserId
+        newButton: currUid == loggedInUserId
             ? NewButton(
                 label: 'New Event',
                 onPressed: () {
@@ -324,7 +335,7 @@ class _EventState extends State<EventsPage> {
               );
             },
             // disable long press for events not created by the logged in user
-            onLongPress: user?.id == loggedInUserId
+            onLongPress: currUid == loggedInUserId
                 ? () => _showOptionsDialog(index)
                 : null,
             trailing:
