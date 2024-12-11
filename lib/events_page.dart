@@ -1,5 +1,4 @@
 import 'package:celebratio/CustomWidget.dart';
-import 'package:celebratio/Model/event.dart';
 import 'package:celebratio/Model/fb_event.dart';
 import 'package:celebratio/event_details_page.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -23,7 +22,6 @@ class EventsPage extends StatefulWidget {
 
 class _EventState extends State<EventsPage> {
   final loggedInUserId = FirebaseAuth.instance.currentUser!.uid;
-  final db = DataBase();
   int selectedButtonIndex = 0;
   String sortType = "";
   final DateTime today = DateTime.now();
@@ -32,6 +30,103 @@ class _EventState extends State<EventsPage> {
 
   // var user =  FirebaseAuth.instance.currentUser!;
   var currUid;
+
+
+  @override
+  initState() {
+    super.initState();
+    fetchEvents();
+    _filterEvents(); // Initialize filtered events
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomWidget(
+        title: _setAppBarTitle(),
+        // disable new button for events not created by the logged in user
+        newButton: currUid == loggedInUserId
+            ? NewButton(
+                label: 'New Event',
+                onPressed: () {
+                  _addNewEvent();
+                })
+            : null,
+        filterButtons: [
+          FilterButton(
+              label: 'Past',
+              onPressed: () {
+                setState(() {
+                  selectedButtonIndex = 0;
+                  _filterEvents();
+                });
+              }),
+          FilterButton(
+              label: 'Current',
+              onPressed: () {
+                setState(() {
+                  selectedButtonIndex = 1;
+                  _filterEvents();
+                });
+              }),
+          FilterButton(
+            label: 'Upcoming',
+            onPressed: () {
+              setState(() {
+                selectedButtonIndex = 2;
+                _filterEvents();
+              });
+            },
+          ),
+        ],
+        sortOptions: [
+          SortOption(
+              label: 'Name',
+              onSelected: () {
+                sortType = 'Name';
+                _sortEvents();
+              }),
+          SortOption(
+              label: 'Category',
+              onSelected: () {
+                sortType = 'Category';
+                _sortEvents();
+              })
+        ],
+        tileBuilder: (context, index) {
+          final formatter = DateFormat('yyyy-MM-dd');
+          final event = filteredEvents[index];
+          return ListTile(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => EventDetails(
+                    eventData: event,
+                  ),
+                ),
+              );
+            },
+            // disable long press for events not created by the logged in user
+            onLongPress: currUid == loggedInUserId
+                ? () => _showOptionsDialog(index)
+                : null,
+            trailing:
+                Text(formatter.format(DateTime.parse(event.date.toString()))),
+            title: Text(event.name),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(event.id.toString()),
+                Text(event.description,
+                    maxLines: 1, overflow: TextOverflow.ellipsis),
+              ],
+            ),
+          );
+        },
+        itemCount: filteredEvents.length);
+  }
+
+
 
   Future<void> fetchEvents() async {
     List<FbEvent> friendsEvents;
@@ -106,7 +201,7 @@ class _EventState extends State<EventsPage> {
               onTap: () {
                 try {
                   var appState =
-                      Provider.of<ApplicationState>(context, listen: false);
+                  Provider.of<ApplicationState>(context, listen: false);
                   appState.deleteEvent(eventId: filteredEvents[index].id);
                   allEvents.remove(filteredEvents[index]);
                   _filterEvents();
@@ -209,7 +304,7 @@ class _EventState extends State<EventsPage> {
                     categoryController.text.isNotEmpty) {
                   try {
                     var appState =
-                        Provider.of<ApplicationState>(context, listen: false);
+                    Provider.of<ApplicationState>(context, listen: false);
                     await appState.addEvent(
                         name: nameController.text,
                         description: descriptionController.text,
@@ -260,97 +355,4 @@ class _EventState extends State<EventsPage> {
     return widget.userDisplayName ?? '' + "'s Events";
   }
 
-  @override
-  initState() {
-    super.initState();
-    fetchEvents();
-    _filterEvents(); // Initialize filtered events
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return CustomWidget(
-        title: _setAppBarTitle(),
-        // disable new button for events not created by the logged in user
-        newButton: currUid == loggedInUserId
-            ? NewButton(
-                label: 'New Event',
-                onPressed: () {
-                  _addNewEvent();
-                })
-            : null,
-        filterButtons: [
-          FilterButton(
-              label: 'Past',
-              onPressed: () {
-                setState(() {
-                  selectedButtonIndex = 0;
-                  _filterEvents();
-                });
-              }),
-          FilterButton(
-              label: 'Current',
-              onPressed: () {
-                setState(() {
-                  selectedButtonIndex = 1;
-                  _filterEvents();
-                });
-              }),
-          FilterButton(
-            label: 'Upcoming',
-            onPressed: () {
-              setState(() {
-                selectedButtonIndex = 2;
-                _filterEvents();
-              });
-            },
-          ),
-        ],
-        sortOptions: [
-          SortOption(
-              label: 'Name',
-              onSelected: () {
-                sortType = 'Name';
-                _sortEvents();
-              }),
-          SortOption(
-              label: 'Category',
-              onSelected: () {
-                sortType = 'Category';
-                _sortEvents();
-              })
-        ],
-        tileBuilder: (context, index) {
-          final formatter = DateFormat('yyyy-MM-dd');
-          final event = filteredEvents[index];
-          return ListTile(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => EventDetails(
-                    eventData: event,
-                  ),
-                ),
-              );
-            },
-            // disable long press for events not created by the logged in user
-            onLongPress: currUid == loggedInUserId
-                ? () => _showOptionsDialog(index)
-                : null,
-            trailing:
-                Text(formatter.format(DateTime.parse(event.date.toString()))),
-            title: Text(event.name),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(event.id.toString()),
-                Text(event.description,
-                    maxLines: 1, overflow: TextOverflow.ellipsis),
-              ],
-            ),
-          );
-        },
-        itemCount: filteredEvents.length);
-  }
 }
