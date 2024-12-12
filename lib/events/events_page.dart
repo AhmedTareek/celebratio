@@ -1,5 +1,5 @@
 import 'package:celebratio/CustomWidget.dart';
-import 'package:celebratio/event_details_page.dart';
+import '/Gifts/gift_list_page.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -92,7 +92,7 @@ class _EventState extends State<EventsPage> {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => EventDetails(eventData: event),
+                builder: (context) => GiftList(eventData: event),
               ),
             );
           },
