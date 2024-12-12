@@ -1,9 +1,12 @@
+import 'package:celebratio/Model/fb_event.dart';
+import 'package:celebratio/events/events_controller.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../app_state.dart';
 
 class AddEventPage extends StatefulWidget {
-  const AddEventPage({super.key});
+  final EventsController controller;
+
+  const AddEventPage({super.key, required this.controller});
 
   @override
   State<AddEventPage> createState() => _AddEventPageState();
@@ -59,7 +62,9 @@ class _AddEventPageState extends State<AddEventPage> {
                 }
               },
               child: Text(
-                selectedDate == null ? 'Select Event Date' : '${selectedDate!.toLocal()}'.split(' ')[0],
+                selectedDate == null
+                    ? 'Select Event Date'
+                    : '${selectedDate!.toLocal()}'.split(' ')[0],
               ),
             ),
             const SizedBox(height: 16),
@@ -105,24 +110,29 @@ class _AddEventPageState extends State<AddEventPage> {
         descriptionController.text.isNotEmpty &&
         categoryController.text.isNotEmpty) {
       try {
-        var appState = Provider.of<ApplicationState>(context, listen: false);
-        await appState.addEvent(
+        FbEvent event = FbEvent(
           name: nameController.text,
-          description: descriptionController.text,
           date: selectedDate!,
           location: locationController.text,
+          description: descriptionController.text,
           category: categoryController.text,
+          createdBy: FirebaseAuth.instance.currentUser!.uid,
         );
-
-        Navigator.pop(context, true); // Return true to indicate success
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Event added successfully')),
-        );
+        await widget.controller.addEvent(event);
+        if (context.mounted) {
+          Navigator.pop(context, true); // Return true to indicate success
+        }
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Event added successfully')),
+          );
+        }
       } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error adding event: ${e.toString()}')),
-        );
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error adding event: ${e.toString()}')),
+          );
+        }
       }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(

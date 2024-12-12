@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../app_state.dart';
 
-
 class EventsController extends ChangeNotifier {
   final BuildContext context;
   final String? userUid;
@@ -19,7 +18,9 @@ class EventsController extends ChangeNotifier {
 
   // Getters
   List<FbEvent> get filteredEvents => _filteredEvents;
+
   int get selectedButtonIndex => _selectedButtonIndex;
+
   String get sortType => _sortType;
 
   // Initialize the controller
@@ -32,7 +33,7 @@ class EventsController extends ChangeNotifier {
   Future<void> fetchEvents() async {
     try {
       var appState = Provider.of<ApplicationState>(context, listen: false);
-      String uid = userUid ??  FirebaseAuth.instance.currentUser!.uid;
+      String uid = userUid ?? FirebaseAuth.instance.currentUser!.uid;
       List<FbEvent> friendsEvents = await appState.getEventsByFriendId(uid);
 
       _allEvents = friendsEvents.toList();
@@ -93,6 +94,30 @@ class EventsController extends ChangeNotifier {
       filterEvents(); // This will also update filtered events
     } catch (e) {
       print('Error deleting event: $e');
+      rethrow; // Rethrow to handle in UI
+    }
+  }
+
+  // update an event
+  Future<void> updateEvent(String eventId,
+      Map<String, dynamic> updatedData) async {
+    try {
+      var appState = Provider.of<ApplicationState>(context, listen: false);
+      await appState.editEvent(
+          eventId: eventId, updatedData: updatedData);
+    } catch (e) {
+      print('Error updating event: $e');
+      rethrow; // Rethrow to handle in UI
+    }
+  }
+
+  // Add an event
+  Future<void> addEvent(FbEvent event) {
+    try {
+      var appState = Provider.of<ApplicationState>(context, listen: false);
+      return appState.addEvent(event);
+    } catch (e) {
+      print('Error adding event: $e');
       rethrow; // Rethrow to handle in UI
     }
   }

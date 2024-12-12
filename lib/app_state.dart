@@ -13,7 +13,6 @@ import 'package:flutter/cupertino.dart';
 import 'Model/fb_pledged_gift.dart';
 import 'Model/fb_pledged_gifts_to_me.dart';
 import 'firebase_options.dart';
-import 'Model/friend.dart';
 
 class ApplicationState extends ChangeNotifier {
   ApplicationState() {
@@ -24,8 +23,7 @@ class ApplicationState extends ChangeNotifier {
 
   bool get loggedIn => _loggedIn;
 
-  StreamSubscription<QuerySnapshot>? _friendsSubscription;
-  List<Friend> _friends = [];
+
 
   Future<void> init() async {
     await Firebase.initializeApp(
@@ -41,6 +39,11 @@ class ApplicationState extends ChangeNotifier {
       } else {
         _loggedIn = false;
       }
+      notifyListeners();
+    });
+
+    // subscribe to changes in the events doc
+    FirebaseFirestore.instance.collection('events').snapshots().listen((event) {
       notifyListeners();
     });
   }
@@ -62,24 +65,20 @@ class ApplicationState extends ChangeNotifier {
     });
   }
 
-  Future<void> addEvent({
-    required String name,
-    required String description,
-    required DateTime date,
-    required String location,
-    required String category,
-  }) async {
+  Future<void> addEvent(FbEvent event) async {
     final currentUser = FirebaseAuth.instance.currentUser!;
     final eventRef = FirebaseFirestore.instance.collection('events').doc();
 
-    await eventRef.set({
-      'name': name,
-      'description': description,
-      'date': date.toIso8601String(),
-      'location': location,
-      'category': category,
-      'createdBy': currentUser.uid,
-    });
+    // await eventRef.set({
+    //   'name': name,
+    //   'description': description,
+    //   'date': date.toIso8601String(),
+    //   'location': location,
+    //   'category': category,
+    //   'createdBy': currentUser.uid,
+    // });
+
+    await eventRef.set(event.toFirestore());
 
     await FirebaseFirestore.instance
         .collection('users')
@@ -213,6 +212,23 @@ class ApplicationState extends ChangeNotifier {
   Future<void> deleteEvent({required String eventId}) async {
     final eventRef = FirebaseFirestore.instance.collection('events').doc(eventId);
     await eventRef.delete();
+    // delete all gifts associated with the event
+    final giftsQuery = await FirebaseFirestore.instance
+        .collection('gifts')
+        .where('event', isEqualTo: eventId)
+        .get();
+    for (final giftDoc in giftsQuery.docs) {
+      await giftDoc.reference.delete();
+    }
+    // delete the event from the current user document
+    final currentUser = FirebaseAuth.instance.currentUser!;
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(currentUser.uid)
+        .update({
+      'events': FieldValue.arrayRemove([eventId]),
+    });
+
   }
 
   Future<List<PledgedGift>> getMyPledgedGifts() async {

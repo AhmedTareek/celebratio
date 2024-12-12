@@ -1,16 +1,14 @@
+import 'package:celebratio/events/events_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:provider/provider.dart';
-
-import '../Model/event.dart';
 import '../Model/fb_event.dart';
-import '../Model/local_db.dart';
-import '../app_state.dart';
 
 class EditEventPage extends StatefulWidget {
   final FbEvent event;
+  final EventsController controller;
 
-  const EditEventPage({super.key, required this.event});
+  const EditEventPage(
+      {super.key, required this.event, required this.controller});
 
   @override
   State<EditEventPage> createState() => _EditEventPageState();
@@ -37,8 +35,7 @@ class _EditEventPageState extends State<EditEventPage> {
   void _updateEvent() async {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
-      var appState = Provider.of<ApplicationState>(context, listen: false);
-      await appState.editEvent(eventId: widget.event.id, updatedData: {
+      await widget.controller.updateEvent(widget.event.id!, {
         'name': name,
         'description': description,
         'date': date.toIso8601String(),
