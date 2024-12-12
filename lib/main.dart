@@ -8,9 +8,8 @@ import 'package:firebase_ui_auth/firebase_ui_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
-import 'Authentication/authentication.dart';
 import 'app_state.dart';
-import 'events_page.dart';
+import 'events/events_page.dart';
 import 'friends_page.dart';
 
 void main() async {
@@ -52,15 +51,7 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  final List<Widget> pages = [
-    EventsPage(),
-    Friends(),
-    Card(),
-    InGifts(),
-    OutGifts(),
-  ];
   var _selectedIdx = 1;
-
 
   String getGreeting() {
     var now = DateTime.now();
@@ -80,39 +71,51 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     final bool isLoggedIn = Provider.of<ApplicationState>(context).loggedIn;
-
+    final List<Widget> pages = [
+      EventsPage(
+        userUid: isLoggedIn ? FirebaseAuth.instance.currentUser!.uid : null,
+      ),
+      Friends(),
+      Card(),
+      InGifts(),
+      OutGifts(),
+    ];
     var theme = Theme.of(context);
     var style = theme.textTheme.displayMedium!.copyWith(
       color: theme.colorScheme.primary,
     );
 
     return Scaffold(
-      body: isLoggedIn? _selectedIdx == 0 ||
-              _selectedIdx == 1 ||
-              _selectedIdx == 3 ||
-              _selectedIdx == 4
-          ? pages[_selectedIdx]
-          : pages[1]
-      :  const SignInWidget(),
-      bottomNavigationBar: isLoggedIn? NavigationBar(
-        destinations: const [
-          NavigationDestination(
-              icon: Icon(Icons.calendar_month_rounded), label: 'Events'),
-          NavigationDestination(
-              icon: Icon(Icons.people_alt_rounded), label: 'Friends'),
-          NavigationDestination(icon: Icon(Icons.feed_rounded), label: 'Feed'),
-          NavigationDestination(icon: Icon(Icons.cake_rounded), label: 'In'),
-          NavigationDestination(
-              icon: Icon(Icons.checklist_rounded), label: 'out'),
-        ],
-        selectedIndex: _selectedIdx,
-        onDestinationSelected: (index) {
-          _selectedIdx = index;
-          setState(() {});
-        },
-      ): null,
+      body: isLoggedIn
+          ? _selectedIdx == 0 ||
+                  _selectedIdx == 1 ||
+                  _selectedIdx == 3 ||
+                  _selectedIdx == 4
+              ? pages[_selectedIdx]
+              : pages[1]
+          : const SignInWidget(),
+      bottomNavigationBar: isLoggedIn
+          ? NavigationBar(
+              destinations: const [
+                NavigationDestination(
+                    icon: Icon(Icons.calendar_month_rounded), label: 'Events'),
+                NavigationDestination(
+                    icon: Icon(Icons.people_alt_rounded), label: 'Friends'),
+                NavigationDestination(
+                    icon: Icon(Icons.feed_rounded), label: 'Feed'),
+                NavigationDestination(
+                    icon: Icon(Icons.cake_rounded), label: 'In'),
+                NavigationDestination(
+                    icon: Icon(Icons.checklist_rounded), label: 'out'),
+              ],
+              selectedIndex: _selectedIdx,
+              onDestinationSelected: (index) {
+                _selectedIdx = index;
+                setState(() {});
+              },
+            )
+          : null,
     );
-
   }
 }
 
@@ -189,7 +192,8 @@ class SignInWidget extends StatelessWidget {
           if (state is UserCreated) {
             user.updateDisplayName(user.email!.split('@')[0]);
             // Add the new user to the Firestore database
-            final userDocRef = FirebaseFirestore.instance.collection('users').doc(user.uid);
+            final userDocRef =
+                FirebaseFirestore.instance.collection('users').doc(user.uid);
 
             await userDocRef.set({
               'name': user.displayName ?? user.email!.split('@')[0],

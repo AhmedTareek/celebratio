@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
-import 'Model/event.dart';
-import 'Model/fb_event.dart';
-import 'Model/local_db.dart';
-import 'app_state.dart';
+import '../Model/event.dart';
+import '../Model/fb_event.dart';
+import '../Model/local_db.dart';
+import '../app_state.dart';
 
 class EditEventPage extends StatefulWidget {
   final FbEvent event;
