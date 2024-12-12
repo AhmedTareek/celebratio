@@ -5,10 +5,10 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-
+import 'add_event_page.dart';
 import 'app_state.dart';
 import 'edit_event_page.dart';
-import 'Model/local_db.dart';
+
 
 class EventsPage extends StatefulWidget {
   final String? userUid;
@@ -28,8 +28,7 @@ class _EventState extends State<EventsPage> {
   List<FbEvent> filteredEvents = [];
   List<FbEvent> allEvents = [];
 
-  // var user =  FirebaseAuth.instance.currentUser!;
-  var currUid;
+  String? currUid;
 
 
   @override
@@ -140,7 +139,7 @@ class _EventState extends State<EventsPage> {
       }
     }
 
-    friendsEvents = await appState.getEventsByFriendId(currUid);
+    friendsEvents = await appState.getEventsByFriendId(currUid!);
     setState(() {
       allEvents = friendsEvents.toList();
       _filterEvents();
@@ -219,130 +218,16 @@ class _EventState extends State<EventsPage> {
   }
 
   void _addNewEvent() {
-    final TextEditingController nameController = TextEditingController();
-    final TextEditingController locationController = TextEditingController();
-    final TextEditingController descriptionController = TextEditingController();
-    final TextEditingController categoryController = TextEditingController();
-    DateTime? selectedDate;
-
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Add New Event'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: nameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Event Name',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                ElevatedButton(
-                  onPressed: () async {
-                    DateTime? pickedDate = await showDatePicker(
-                      context: context,
-                      initialDate: DateTime.now(),
-                      firstDate: DateTime(2000),
-                      lastDate: DateTime(2100),
-                    );
-                    if (pickedDate != null) {
-                      selectedDate = pickedDate;
-                    }
-                  },
-                  child: Text(
-                    selectedDate == null
-                        ? 'Select Event Date'
-                        : 'Date: ${selectedDate!.toLocal()}'.split(' ')[0],
-                  ),
-                ),
-                SizedBox(height: 10),
-                TextField(
-                  controller: locationController,
-                  decoration: InputDecoration(
-                    labelText: 'Location',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                SizedBox(height: 10),
-                TextField(
-                  controller: descriptionController,
-                  decoration: InputDecoration(
-                    labelText: 'Description',
-                    border: OutlineInputBorder(),
-                  ),
-                  maxLines: 3,
-                ),
-                SizedBox(height: 10),
-                TextField(
-                  controller: categoryController,
-                  decoration: InputDecoration(
-                    labelText: 'Category',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context); // Close the dialog without adding
-              },
-              child: Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                if (nameController.text.isNotEmpty &&
-                    selectedDate != null &&
-                    locationController.text.isNotEmpty &&
-                    descriptionController.text.isNotEmpty &&
-                    categoryController.text.isNotEmpty) {
-                  try {
-                    var appState =
-                    Provider.of<ApplicationState>(context, listen: false);
-                    await appState.addEvent(
-                        name: nameController.text,
-                        description: descriptionController.text,
-                        date: selectedDate!,
-                        location: locationController.text,
-                        category: categoryController.text);
-                    // final response = await db.insertNewEvent(event);
-
-                    // Add to list if database insert was successful
-                    setState(() {
-                      // allEvents.add(event);
-                      fetchEvents(); // Refresh the filtered list
-                    });
-                    Navigator.pop(context); // Close the dialog
-                    // Show success message
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Event added successfully')),
-                    );
-                  } catch (e) {
-                    print(e);
-                    // Show error message if database operation fails
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                          content: Text('Error adding event: ${e.toString()}')),
-                    );
-                  }
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Please fill all fields')),
-                  );
-                }
-              },
-              child: Text('Add'),
-            ),
-          ],
-        );
-      },
-    );
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const AddEventPage(),
+      ),
+    ).then((value) {
+      if (value == true) {
+        fetchEvents(); // Refresh the events list if a new event was added
+      }
+    });
   }
 
   String _setAppBarTitle() {
@@ -356,3 +241,5 @@ class _EventState extends State<EventsPage> {
   }
 
 }
+
+
