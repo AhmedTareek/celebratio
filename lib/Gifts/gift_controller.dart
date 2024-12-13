@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../app_state.dart';
 
-class EventDetailsController extends ChangeNotifier {
+class GiftController extends ChangeNotifier {
   final BuildContext context;
   final FbEvent event;
 
@@ -19,7 +19,7 @@ class EventDetailsController extends ChangeNotifier {
   String get sortType => _sortType;
   FbEvent get currentEvent => event;
 
-  EventDetailsController({
+  GiftController({
     required this.context,
     required this.event,
   });

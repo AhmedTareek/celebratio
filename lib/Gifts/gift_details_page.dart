@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:celebratio/Model/fb_gift.dart';
-import 'event_details_controller.dart';
+import 'gift_controller.dart';
 import 'edit_gift_page.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class GiftDetails extends StatefulWidget {
   final FbGift gift;
-  final EventDetailsController controller;
+  final GiftController controller;
 
   const GiftDetails({
     super.key,
