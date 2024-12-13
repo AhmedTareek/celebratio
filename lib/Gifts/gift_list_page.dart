@@ -58,7 +58,7 @@ class _GiftListState extends State<GiftList> {
         location: _controller.currentEvent.location,
         date: _controller.currentEvent.date.toString().split(' ')[0],
         description: _controller.currentEvent.description,
-        createdBy: _controller.currentEvent.createdBy,
+        createdBy: _controller.currentEventCreatorName??'',
       ),
       filterButtons: [
         FilterButton(

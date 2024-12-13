@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'event_details_controller.dart';
+import 'gift_controller.dart';
 
 class AddGiftPage extends StatefulWidget {
-  final EventDetailsController controller;
+  final GiftController controller;
 
   const AddGiftPage({
     super.key,

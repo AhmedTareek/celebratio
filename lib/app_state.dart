@@ -23,8 +23,6 @@ class ApplicationState extends ChangeNotifier {
 
   bool get loggedIn => _loggedIn;
 
-
-
   Future<void> init() async {
     await Firebase.initializeApp(
         options: DefaultFirebaseOptions.currentPlatform);
@@ -68,15 +66,6 @@ class ApplicationState extends ChangeNotifier {
   Future<void> addEvent(FbEvent event) async {
     final currentUser = FirebaseAuth.instance.currentUser!;
     final eventRef = FirebaseFirestore.instance.collection('events').doc();
-
-    // await eventRef.set({
-    //   'name': name,
-    //   'description': description,
-    //   'date': date.toIso8601String(),
-    //   'location': location,
-    //   'category': category,
-    //   'createdBy': currentUser.uid,
-    // });
 
     await eventRef.set(event.toFirestore());
 
@@ -187,12 +176,18 @@ class ApplicationState extends ChangeNotifier {
         .toList();
   }
 
-  Future<void> editGift({
+  Future<bool> editGift({
     required String giftId,
     required Map<String, dynamic> updatedData,
   }) async {
     final giftRef = FirebaseFirestore.instance.collection('gifts').doc(giftId);
+    // check if the status of the gift is pledged then refuse any edits
+    final giftDoc = await giftRef.get();
+    if (giftDoc.data()!['status'] == 'Pledged') {
+      return false;
+    }
     await giftRef.update(updatedData);
+    return true;
   }
 
   Future<void> deleteGift({required String giftId}) async {
@@ -200,17 +195,18 @@ class ApplicationState extends ChangeNotifier {
     await giftRef.delete();
   }
 
-
   Future<void> editEvent({
     required String eventId,
     required Map<String, dynamic> updatedData,
   }) async {
-    final eventRef = FirebaseFirestore.instance.collection('events').doc(eventId);
+    final eventRef =
+        FirebaseFirestore.instance.collection('events').doc(eventId);
     await eventRef.update(updatedData);
   }
 
   Future<void> deleteEvent({required String eventId}) async {
-    final eventRef = FirebaseFirestore.instance.collection('events').doc(eventId);
+    final eventRef =
+        FirebaseFirestore.instance.collection('events').doc(eventId);
     await eventRef.delete();
     // delete all gifts associated with the event
     final giftsQuery = await FirebaseFirestore.instance
@@ -228,7 +224,6 @@ class ApplicationState extends ChangeNotifier {
         .update({
       'events': FieldValue.arrayRemove([eventId]),
     });
-
   }
 
   Future<List<PledgedGift>> getMyPledgedGifts() async {
@@ -246,13 +241,11 @@ class ApplicationState extends ChangeNotifier {
           .get();
 
       pledgedGifts.add(
-          PledgedGift.fromData(giftDoc.data(), giftDoc.id, eventDoc.data())
-      );
+          PledgedGift.fromData(giftDoc.data(), giftDoc.id, eventDoc.data()));
     }
 
     return pledgedGifts;
   }
-
 
   Future<List<PledgedGiftToMe>> getGiftsToBeGivenToMe() async {
     final currentUser = FirebaseAuth.instance.currentUser!;
@@ -271,15 +264,27 @@ class ApplicationState extends ChangeNotifier {
       final event = eventDoc.data();
 
       if (event?['createdBy'] == currentUser.uid) {
-        giftsToMe.add(
-            PledgedGiftToMe.fromData(gift, giftDoc.id, event)
-        );
+        giftsToMe.add(PledgedGiftToMe.fromData(gift, giftDoc.id, event));
       }
     }
 
     return giftsToMe;
   }
 
+  // get upcoming events count by user id
+  Future<int> getUpcomingEventsCountByUserId(String userId) async {
+    final now = DateTime.now().toIso8601String();
+    final eventsQuery = await FirebaseFirestore.instance
+        .collection('events')
+        .where('createdBy', isEqualTo: userId)
+        .where('date', isGreaterThanOrEqualTo: now)
+        .get();
+    return eventsQuery.docs.length;
+  }
 
-
+  // get the name of the user by id
+  Future<String> getUserNameById(String userId) async {
+    final userDoc = await FirebaseFirestore.instance.collection('users').doc(userId).get();
+    return userDoc.data()!['name'];
+  }
 }

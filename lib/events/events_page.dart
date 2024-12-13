@@ -104,7 +104,6 @@ class _EventState extends State<EventsPage> {
           subtitle: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(event.id!),
               Text(
                 event.description,
                 maxLines: 1,

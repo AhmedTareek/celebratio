@@ -12,12 +12,18 @@ class GiftController extends ChangeNotifier {
   List<FbGift> _filteredGifts = [];
   String _selectedFilter = 'All';
   String _sortType = "";
+  String? _currentEventCreatorName;
 
   // Getters
   List<FbGift> get filteredGifts => _filteredGifts;
+
   String get selectedFilter => _selectedFilter;
+
   String get sortType => _sortType;
+
   FbEvent get currentEvent => event;
+
+  String? get currentEventCreatorName => _currentEventCreatorName;
 
   GiftController({
     required this.context,
@@ -26,6 +32,10 @@ class GiftController extends ChangeNotifier {
 
   // Initialize the controller
   Future<void> init() async {
+    var appState = Provider.of<ApplicationState>(context, listen: false);
+    _currentEventCreatorName =
+        await appState.getUserNameById(currentEvent.createdBy!);
+    print('Event creator name: $_currentEventCreatorName');
     await fetchGifts();
   }
 
@@ -34,7 +44,6 @@ class GiftController extends ChangeNotifier {
     try {
       var appState = Provider.of<ApplicationState>(context, listen: false);
       var gifts = await appState.getGiftsByEventId(event.id!);
-
       _allGifts = List.from(gifts);
       filterGifts();
       notifyListeners();
@@ -48,9 +57,8 @@ class GiftController extends ChangeNotifier {
     if (_selectedFilter == 'All') {
       _filteredGifts = _allGifts.toList();
     } else {
-      _filteredGifts = _allGifts
-          .where((gift) => gift.status == _selectedFilter)
-          .toList();
+      _filteredGifts =
+          _allGifts.where((gift) => gift.status == _selectedFilter).toList();
     }
     sortGifts(); // Apply current sort after filtering
     notifyListeners();
@@ -119,7 +127,7 @@ class GiftController extends ChangeNotifier {
     }
   }
 
-  Future<void> editGift({
+  Future<bool> editGift({
     required String giftId,
     required String name,
     required double price,
@@ -128,7 +136,7 @@ class GiftController extends ChangeNotifier {
   }) async {
     try {
       var appState = Provider.of<ApplicationState>(context, listen: false);
-      await appState.editGift(
+      bool result = await appState.editGift(
         giftId: giftId,
         updatedData: {
           'name': name,
@@ -137,27 +145,35 @@ class GiftController extends ChangeNotifier {
           'category': category,
         },
       );
-      await fetchGifts();
+      if (result) {
+        await fetchGifts();
+        return true;
+      }
+      return false;
     } catch (e) {
       print('Error editing gift: $e');
       rethrow;
     }
   }
 
-  Future<void> pledgeGift({
+  Future<bool> pledgeGift({
     required String giftId,
     required String userId,
   }) async {
     try {
       var appState = Provider.of<ApplicationState>(context, listen: false);
-      await appState.editGift(
+      bool result = await appState.editGift(
         giftId: giftId,
         updatedData: {
           'status': 'Pledged',
           'pledgedBy': userId,
         },
       );
-      await fetchGifts();
+      if (result) {
+        await fetchGifts();
+        return true;
+      }
+      return false;
     } catch (e) {
       print('Error pledging gift: $e');
       rethrow;
