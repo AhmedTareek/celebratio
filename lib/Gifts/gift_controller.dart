@@ -1,8 +1,13 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:celebratio/Model/fb_event.dart';
 import 'package:celebratio/Model/fb_gift.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../app_state.dart';
+import 'package:http/http.dart' as http;
 
 class GiftController extends ChangeNotifier {
   final BuildContext context;
@@ -10,9 +15,11 @@ class GiftController extends ChangeNotifier {
 
   List<FbGift> _allGifts = [];
   List<FbGift> _filteredGifts = [];
+  List<String> _giftPledgerNames = [];
   String _selectedFilter = 'All';
   String _sortType = "";
   String? _currentEventCreatorName;
+  final ImagePicker _picker = ImagePicker();
 
   // Getters
   List<FbGift> get filteredGifts => _filteredGifts;
@@ -24,6 +31,8 @@ class GiftController extends ChangeNotifier {
   FbEvent get currentEvent => event;
 
   String? get currentEventCreatorName => _currentEventCreatorName;
+
+  List<String> get giftPledgerNames => _giftPledgerNames;
 
   GiftController({
     required this.context,
@@ -45,6 +54,17 @@ class GiftController extends ChangeNotifier {
       var appState = Provider.of<ApplicationState>(context, listen: false);
       var gifts = await appState.getGiftsByEventId(event.id!);
       _allGifts = List.from(gifts);
+      // loop over all gifts and get the pledger name for each pledged gift
+      _giftPledgerNames.clear();
+      for (var gift in _allGifts) {
+        if (gift.status == 'Pledged') {
+          var pledgerName = await appState.getUserNameById(gift.pledgedBy!);
+          _giftPledgerNames.add(pledgerName);
+        } else {
+          _giftPledgerNames.add('');
+        }
+      }
+      print('names: $_giftPledgerNames');
       filterGifts();
       notifyListeners();
     } catch (e) {
@@ -92,21 +112,11 @@ class GiftController extends ChangeNotifier {
   }
 
   // Add new gift
-  Future<void> addGift({
-    required String name,
-    required String description,
-    required String category,
-    required double price,
-  }) async {
+  Future<void> addGift(FbGift gift) async {
     try {
       var appState = Provider.of<ApplicationState>(context, listen: false);
-      await appState.addGift(
-        eventId: event.id!,
-        name: name,
-        description: description,
-        category: category,
-        price: price,
-      );
+      gift.eventId = event.id!;
+      await appState.addGift(gift);
       await fetchGifts();
     } catch (e) {
       print('Error adding gift: $e');
@@ -114,11 +124,50 @@ class GiftController extends ChangeNotifier {
     }
   }
 
+  Future<XFile?> pickImage() async {
+    final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+    return pickedFile;
+  }
+
+  Future<String?> uploadImage(File? imageFile) async {
+    const String apiKey = 'f16ebd757c6b75bb4204d51b558c01a7';
+    if (imageFile == null) {
+      return null;
+    }
+
+    final request = http.MultipartRequest(
+      'POST',
+      Uri.parse('https://api.imgbb.com/1/upload?key=$apiKey'),
+    );
+    request.files
+        .add(await http.MultipartFile.fromPath('image', imageFile.path));
+    try {
+      final response = await request.send();
+      if (response.statusCode == 200) {
+        final responseBody = await response.stream.bytesToString();
+        final jsonResponse = jsonDecode(responseBody);
+        return jsonResponse['data']['url'];
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text(
+                  'Image upload failed with status ${response.statusCode}')),
+        );
+        return null;
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error uploading image: $e')),
+      );
+      return null;
+    }
+  }
+
   // Delete gift
   Future<void> deleteGift(String giftId) async {
     try {
       var appState = Provider.of<ApplicationState>(context, listen: false);
-      await appState.deleteGift(giftId: giftId);
+      await appState.deleteGift(giftId);
       _allGifts.removeWhere((gift) => gift.id == giftId);
       filterGifts();
     } catch (e) {

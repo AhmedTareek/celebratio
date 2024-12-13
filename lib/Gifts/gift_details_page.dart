@@ -36,24 +36,31 @@ class _GiftDetailsState extends State<GiftDetails> {
                   context,
                   MaterialPageRoute(
                     builder: (context) => EditGiftPage(
+                      controller: widget.controller,
                       gift: gift,
                       onSave: (updatedGift) async {
                         // Update the controller with the updated gift
-                        await widget.controller.editGift(
+                        bool result = await widget.controller.editGift(
                           giftId: updatedGift.id,
                           name: updatedGift.name,
                           price: updatedGift.price,
                           description: updatedGift.description,
                           category: updatedGift.category,
                         );
-
-                        // Update the state with the new gift values
-                        setState(() {
-                          widget.gift.name = updatedGift.name;
-                          widget.gift.price = updatedGift.price;
-                          widget.gift.description = updatedGift.description;
-                          widget.gift.category = updatedGift.category;
-                        });
+                        if (result) {
+                          // Update the state with the new gift values
+                          setState(() {
+                            widget.gift.name = updatedGift.name;
+                            widget.gift.price = updatedGift.price;
+                            widget.gift.description = updatedGift.description;
+                            widget.gift.category = updatedGift.category;
+                          });
+                        } else if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                                content: Text('Error updating gift')),
+                          );
+                        }
                       },
                     ),
                   ),
@@ -67,7 +74,7 @@ class _GiftDetailsState extends State<GiftDetails> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildImageHeader(theme),
+              _buildImageHeader(theme, gift.imageUrl),
               _buildGiftInfo(theme, gift),
               _buildPriceAndStatus(theme, gift),
               _buildDescription(theme, gift),
@@ -80,11 +87,11 @@ class _GiftDetailsState extends State<GiftDetails> {
     );
   }
 
-  Widget _buildImageHeader(ThemeData theme) {
+  Widget _buildImageHeader(ThemeData theme,String? url) {
     return Stack(
       children: [
         Image.network(
-          'https://platform.vox.com/wp-content/uploads/sites/2/chorus/uploads/chorus_asset/file/23324816/elden_1.png?quality=90&strip=all&crop=7.8125,0,84.375,100',
+          url ??'https://platform.vox.com/wp-content/uploads/sites/2/chorus/uploads/chorus_asset/file/23324816/elden_1.png?quality=90&strip=all&crop=7.8125,0,84.375,100',
           fit: BoxFit.cover,
           width: double.infinity,
           height: 250,
@@ -182,15 +189,20 @@ class _GiftDetailsState extends State<GiftDetails> {
           ),
           onPressed: () async {
             try {
-              await widget.controller.pledgeGift(
+              bool result = await widget.controller.pledgeGift(
                 giftId: gift.id,
                 userId: loggedInUserId,
               );
-
-              setState(() {
-                gift.status = 'Pledged';
-                gift.pledgedBy = loggedInUserId;
-              });
+              if (result) {
+                setState(() {
+                  gift.status = 'Pledged';
+                  gift.pledgedBy = loggedInUserId;
+                });
+              } else if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('gift already pledged')),
+                );
+              }
             } catch (e) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(content: Text('Error pledging gift: ${e.toString()}')),

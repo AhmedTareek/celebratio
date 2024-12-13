@@ -58,7 +58,7 @@ class _GiftListState extends State<GiftList> {
         location: _controller.currentEvent.location,
         date: _controller.currentEvent.date.toString().split(' ')[0],
         description: _controller.currentEvent.description,
-        createdBy: _controller.currentEventCreatorName??'',
+        createdBy: _controller.currentEventCreatorName ?? '',
       ),
       filterButtons: [
         FilterButton(
@@ -87,6 +87,7 @@ class _GiftListState extends State<GiftList> {
       onClearSortOptionsSelected: _controller.clearSort,
       tileBuilder: (context, idx) {
         final gift = _controller.filteredGifts[idx];
+        final pledgerName = _controller.giftPledgerNames[idx];
         return Padding(
           padding: const EdgeInsets.all(8.0),
           child: ListTile(
@@ -97,7 +98,6 @@ class _GiftListState extends State<GiftList> {
                   builder: (context) => GiftDetails(
                     controller: _controller,
                     gift: gift,
-                    // giftOwnerId: _controller.currentEvent.createdBy,
                   ),
                 ),
               ).then((_) => _controller.fetchGifts());
@@ -140,7 +140,11 @@ class _GiftListState extends State<GiftList> {
                   }
                 : null,
             title: Text(gift.name),
-            subtitle: Text(gift.pledgedBy ?? 'No one has pledged this gift'),
+            subtitle: Text(
+              pledgerName.isEmpty
+                  ? 'No one has pledged yet'
+                  : 'Pledged by: $pledgerName',
+            ),
             trailing: Stack(
               alignment: Alignment.center,
               children: [
@@ -164,7 +168,6 @@ class _GiftListState extends State<GiftList> {
     );
   }
 }
-
 
 class EventCard extends StatelessWidget {
   final String name;
