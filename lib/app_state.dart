@@ -77,26 +77,9 @@ class ApplicationState extends ChangeNotifier {
     });
   }
 
-  Future<void> addGift({
-    required String eventId,
-    required String name,
-    required String description,
-    required String category,
-    required double price,
-    String? imageUrl,
-  }) async {
+  Future<void> addGift(FbGift gift) async {
     final giftRef = FirebaseFirestore.instance.collection('gifts').doc();
-
-    await giftRef.set({
-      'name': name,
-      'description': description,
-      'category': category,
-      'price': price,
-      'status': 'Available',
-      'event': eventId,
-      'imageUrl': imageUrl,
-      'pledgedBy': null,
-    });
+    await giftRef.set(gift.toFirestore());
   }
 
   Future<List<FbGift>> getGiftsByEventId(String eventId) async {
