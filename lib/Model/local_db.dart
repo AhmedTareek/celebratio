@@ -1,10 +1,144 @@
-import 'package:celebratio/Model/event.dart';
-import 'package:celebratio/Model/friend.dart';
-import 'package:sqflite/sqflite.dart';
+// import 'package:celebratio/Model/fb_event.dart';
+// import 'package:celebratio/Model/fb_gift.dart';
+// import 'package:sqflite/sqflite.dart';
+// import 'package:path/path.dart';
+//
+// import 'gift.dart';
+// import 'gift_details.dart';
+//
+// class DataBase {
+//   static Database? _myDataBase;
+//
+//   Future<Database?> get myDataBase async {
+//     if (_myDataBase == null) {
+//       _myDataBase = await initialize();
+//       return _myDataBase;
+//     } else {
+//       return _myDataBase;
+//     }
+//   }
+//
+//
+//
+//   static const _version = 4;
+//
+//   initialize() async {
+//     String myPath = await getDatabasesPath();
+//     String path = join(myPath, 'celebratio.db');
+//     Database myDB = await openDatabase(path, version: _version,
+//         onCreate: (db, version) async {
+//       print("Database has been created with proper foreign keys.");
+//     }, onConfigure: (db) async {
+//       await db.execute('PRAGMA foreign_keys = ON');
+//     }, onUpgrade: (db, oldVersion, newVersion) async {
+//       if (oldVersion < newVersion) {
+//         dropDatabase();
+//         // Create Gifts table with foreign key referencing Events
+//         await db.execute('''
+//         CREATE TABLE events (
+//           id TEXT PRIMARY KEY,
+//           name TEXT,
+//           description TEXT,
+//           date TEXT,
+//           location TEXT,
+//           category TEXT,
+//           createdBy TEXT
+//         )
+//       ''');
+//
+//         await db.execute('''
+//         CREATE TABLE gifts (
+//           id TEXT PRIMARY KEY,
+//           name TEXT,
+//           description TEXT,
+//           category TEXT,
+//           price REAL,
+//           status TEXT,
+//           eventId TEXT,
+//           imageUrl TEXT,
+//           pledgedBy TEXT,
+//           FOREIGN KEY (eventId) REFERENCES events (id)
+//         )
+//       ''');
+//         print('Database has been upgraded to version $newVersion');
+//       }
+//     });
+//     return myDB;
+//   }
+//
+//   /// Function to drop the database
+//   Future<void> dropDatabase() async {
+//     String myPath = await getDatabasesPath();
+//     String path = join(myPath, 'celebratio.db');
+//     await deleteDatabase(path);
+//     print("Old database dropped successfully.");
+//   }
+//
+//   // Event functions
+//
+//   deleteEventById(int id) async {
+//     Database? myData = await myDataBase;
+//     int response =
+//         await myData!.delete('events', where: 'id = ?', whereArgs: [id]);
+//     return response;
+//   }
+//
+//   insertNewEvent(FbEvent event) async {
+//     Database? myData = await myDataBase;
+//     int response = await myData!.insert('events', event.toMap());
+//     return response;
+//   }
+//
+//   getAllEvents() async {
+//     Database? myData = await myDataBase;
+//     List<Map<String, dynamic>> response = await myData!.query('events');
+//     List<FbEvent> events = response.map((e) => FbEvent.fromJson(e)).toList();
+//     return events;
+//   }
+//
+//   updateEvent(FbEvent event) async {
+//     final db = await myDataBase;
+//     await db!.update(
+//       'events',
+//       event.toMap(),
+//       where: 'id = ?',
+//       whereArgs: [event.id],
+//     );
+//   }
+//
+//
+//   // Gift functions
+//
+//   insertNewGift(FbGift gift) async {
+//     Database? myData = await myDataBase;
+//     int response = await myData!.insert('gifts', gift.toMap());
+//     return response;
+//   }
+//
+//
+//   deleteGiftById(int id) async {
+//     Database? myData = await myDataBase;
+//     int response =
+//         await myData!.delete('gifts', where: 'id = ?', whereArgs: [id]);
+//     return response;
+//   }
+//
+//   updateGift(Gift gift) async {
+//     final db = await myDataBase;
+//     await db!.update(
+//       'gifts',
+//       gift.toMap(),
+//       where: 'id = ?',
+//       whereArgs: [gift.id],
+//     );
+//   }
+//
+//
+// }
 import 'package:path/path.dart';
-
-import 'gift.dart';
-import 'gift_details.dart';
+import 'package:celebratio/Model/fb_event.dart';
+import 'package:celebratio/Model/fb_gift.dart';
+import 'package:sqflite/sqflite.dart';
 
 class DataBase {
   static Database? _myDataBase;
@@ -13,86 +147,95 @@ class DataBase {
     if (_myDataBase == null) {
       _myDataBase = await initialize();
       return _myDataBase;
-    } else {
-      return _myDataBase;
     }
+    return _myDataBase;
   }
 
-  static const _version = 3;
+  static const _version = 10;
 
   initialize() async {
     String myPath = await getDatabasesPath();
     String path = join(myPath, 'celebratio.db');
     Database myDB = await openDatabase(path, version: _version,
         onCreate: (db, version) async {
-          // Create Users table
-          await db.execute('''CREATE TABLE IF NOT EXISTS users (
-          id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-          name TEXT NOT NULL,
-          email TEXT NOT NULL,
-          preferences TEXT
-      )''');
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS events (
+          id TEXT PRIMARY KEY,
+          name TEXT,
+          description TEXT,
+          date TEXT,
+          location TEXT,
+          category TEXT,
+          createdBy TEXT,
+          needSync INTEGER DEFAULT 0,
+          syncAction TEXT,
+          lastModified INTEGER
+        )
+      ''');
 
-          // Create Events table with foreign key referencing Users
-          await db.execute('''CREATE TABLE IF NOT EXISTS events (
-          id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-          name TEXT NOT NULL,
-          description TEXT NOT NULL,
-          date TEXT NOT NULL,
-          location TEXT NOT NULL,
-          category TEXT NOT NULL,
-          userId INTEGER NOT NULL,
-          FOREIGN KEY (userId) REFERENCES users (id) ON DELETE CASCADE
-      )''');
+      // Create Gifts table with sync status
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS gifts (
+          id TEXT PRIMARY KEY,
+          name TEXT,
+          description TEXT,
+          category TEXT,
+          price REAL,
+          status TEXT,
+          eventId TEXT,
+          imageUrl TEXT,
+          pledgedBy TEXT,
+          needSync INTEGER DEFAULT 0,
+          syncAction TEXT,
+          lastModified INTEGER
+        )
+      ''');
+    }, onUpgrade: (db, oldVersion, newVersion) async {
+      if (oldVersion < newVersion) {
+        print("Upgrading database from version $oldVersion to $newVersion");
+        // delete all rows in event table and gifts table
+        await db.execute('DELETE FROM events');
+        await db.execute('DELETE FROM gifts');
 
-          // Create Gifts table with foreign key referencing Events
-          await db.execute('''CREATE TABLE IF NOT EXISTS gifts (
-          id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-          name TEXT NOT NULL,
-          description TEXT NOT NULL,
-          category TEXT NOT NULL,
-          price REAL NOT NULL,
-          status TEXT NOT NULL,
-          eventId INTEGER NOT NULL,
-          pledgedById INTEGER,
-          FOREIGN KEY (eventId) REFERENCES events (id) ON DELETE CASCADE
-      )''');
-
-          // Create Friends table with foreign keys referencing Users
-          await db.execute('''CREATE TABLE IF NOT EXISTS friends (
-          userId INTEGER NOT NULL,
-          friendId INTEGER NOT NULL,
-          PRIMARY KEY (userId, friendId),
-          FOREIGN KEY (userId) REFERENCES users (id) ON DELETE CASCADE,
-          FOREIGN KEY (friendId) REFERENCES users (id) ON DELETE CASCADE
-      )''');
-
-          print("Database has been created with proper foreign keys.");
-        }, onConfigure: (db) async {
-          await db.execute('PRAGMA foreign_keys = ON');
-        }, onUpgrade: (db, oldVersion, newVersion) async {
-          if (oldVersion < newVersion) {
-            await db.execute('DROP TABLE IF EXISTS gifts');
-            // Create Gifts table with foreign key referencing Events
-            await db.execute('''CREATE TABLE IF NOT EXISTS gifts (
-          id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-          name TEXT NOT NULL,
-          description TEXT NOT NULL,
-          category TEXT NOT NULL,
-          price REAL NOT NULL,
-          status TEXT NOT NULL,
-          eventId INTEGER NOT NULL,
-          pledgerId INTEGER,
-          FOREIGN KEY (eventId) REFERENCES events (id) ON DELETE CASCADE
-      )''');
-            print('Database has been upgraded to version $newVersion');
-          }
-        });
+      //   // Create Events table with sync status
+      //   await db.execute('''
+      //   CREATE TABLE IF NOT EXISTS events (
+      //     id TEXT PRIMARY KEY,
+      //     name TEXT,
+      //     description TEXT,
+      //     date TEXT,
+      //     location TEXT,
+      //     category TEXT,
+      //     createdBy TEXT,
+      //     needSync INTEGER DEFAULT 0,
+      //     syncAction TEXT,
+      //     lastModified INTEGER
+      //   )
+      // ''');
+      //
+      //   // Create Gifts table with sync status
+      //   await db.execute('''
+      //   CREATE TABLE IF NOT EXISTS gifts (
+      //     id TEXT PRIMARY KEY,
+      //     name TEXT,
+      //     description TEXT,
+      //     category TEXT,
+      //     price REAL,
+      //     status TEXT,
+      //     eventId TEXT,
+      //     imageUrl TEXT,
+      //     pledgedBy TEXT,
+      //     needSync INTEGER DEFAULT 0,
+      //     syncAction TEXT,
+      //     lastModified INTEGER
+      //   )
+      // ''');
+        print('Database has been upgraded to version $newVersion');
+      }
+    });
     return myDB;
   }
 
-
-  /// Function to drop the database
   Future<void> dropDatabase() async {
     String myPath = await getDatabasesPath();
     String path = join(myPath, 'celebratio.db');
@@ -100,171 +243,241 @@ class DataBase {
     print("Old database dropped successfully.");
   }
 
-  // Event functions
-
-  deleteEventById(int id) async {
+  // Event functions with sync support
+  Future<FbEvent> insertNewEvent(FbEvent event, {bool needSync = true}) async {
     Database? myData = await myDataBase;
-    int response =
-    await myData!.delete('events', where: 'id = ?', whereArgs: [id]);
-    return response;
+    event.needSync = needSync ? 1 : 0;
+    event.syncAction = 'insert';
+    event.lastModified = DateTime.now().millisecondsSinceEpoch;
+    var eventMap = event.toMap();
+    await myData!.insert('events', eventMap);
+    return event;
   }
 
-  insertNewEvent(Event eventData) async {
+  Future<List<FbEvent>> getUnSyncedEvents() async {
     Database? myData = await myDataBase;
-    int response = await myData!.insert('events', eventData.toMap());
-    return response;
-  }
-
-  getAllEvents() async {
-    Database? myData = await myDataBase;
-    List<Map<String, dynamic>> response = await myData!.query('events');
-    List<Event> events = response.map((e) => Event.fromJson(e)).toList();
-    return events;
-  }
-
-  getEventsByUserId(int id) async {
-    Database? myData = await myDataBase;
-    var response =
-    await myData!.query('events', where: 'userId = ?', whereArgs: [id]);
-    List<Event> events = response.map((e) => Event.fromJson(e)).toList();
-    return events;
-  }
-
-  updateEvent(Event event) async {
-    final db = await myDataBase;
-    await db!.update(
+    List<Map<String, dynamic>> response = await myData!.query(
       'events',
-      event.toMap(),
-      where: 'id = ?',
-      whereArgs: [event.id],
+      where: 'needSync = ?',
+      whereArgs: [1],
     );
+    return response.map((e) => FbEvent.fromJson(e)).toList();
   }
 
-  getUpcomingEventsCountByUserId(int id) async {
-    Database? myData = await myDataBase;
-    var response = await myData!.query('events',
-        where: 'userId = ? AND date >= ?',
-        whereArgs: [id, DateTime.now().toIso8601String()]);
-    return response.length;
-  }
-
-  // User functions
-
-  insertNewUser(Friend userData) async {
-    Database? myData = await myDataBase;
-    int response = await myData!.insert('users', userData.toMap());
-    return response;
-  }
-
-  getAllUsers() async {
-    Database? myData = await myDataBase;
-    List<Map<String, dynamic>> response = await myData!.query('users');
-    List<Friend> users = response.map((e) => Friend.fromJson(e)).toList();
-    return users;
-  }
-
-  getUserById(int id) async {
-    Database? myData = await myDataBase;
-    var response = await myData!.query(
-        'users', where: 'id = ?', whereArgs: [id]);
-    Friend user = Friend.fromJson(response.first);
-    return user;
-  }
-
-  // Gift functions
-
-  insertNewGift(Gift giftData) async {
-    Database? myData = await myDataBase;
-    int response = await myData!.insert('gifts', giftData.toMap());
-    return response;
-  }
-
-  // getGiftsByEventId(int id) async {
-  //   Database? myData = await myDataBase;
-  //   var response = await myData!.query(
-  //       'gifts', where: 'eventId = ?', whereArgs: [id]);
-  //   List<Gift> gifts = response.map((e) => Gift.fromJson(e)).toList();
-  //   return gifts;
-  // }
-
-  deleteGiftById(int id) async {
-    Database? myData = await myDataBase;
-    int response = await myData!.delete(
-        'gifts', where: 'id = ?', whereArgs: [id]);
-    return response;
-  }
-
-  updateGift(Gift gift) async {
+  Future<FbEvent> updateEvent(FbEvent updatedEvent,
+      {bool needSync = true}) async {
     final db = await myDataBase;
-    await db!.update(
+    // get the event from the database
+    var oldEvent = (await db!
+            .query('events', where: 'id = ?', whereArgs: [updatedEvent.id]))
+        .map((e) => FbEvent.fromJson(e))
+        .first;
+
+    updatedEvent.needSync = oldEvent.needSync == 1 ? 1 : (needSync ? 1 : 0);
+    // this is done because if the user was offline and created an event then update it
+    // we need
+    updatedEvent.syncAction =
+        oldEvent.syncAction == 'insert' ? 'insert' : 'update';
+    updatedEvent.lastModified = DateTime.now().millisecondsSinceEpoch;
+    var eventMap = updatedEvent.toMap();
+    await db.update(
+      'events',
+      eventMap,
+      where: 'id = ?',
+      whereArgs: [updatedEvent.id],
+    );
+    return updatedEvent;
+  }
+
+  Future<void> deleteEventById(String id, {bool needSync = true}) async {
+    Database? myData = await myDataBase;
+    if (needSync) {
+      // get the event from the database
+      var event =
+          (await myData!.query('events', where: 'id = ?', whereArgs: [id]))
+              .map((e) => FbEvent.fromJson(e))
+              .first;
+      if (event.syncAction == 'insert') {
+        // if the event was created offline and not synced yet, just delete it
+        await myData.delete('events', where: 'id = ?', whereArgs: [id]);
+        return;
+      }
+      // Mark for deletion instead of actually deleting
+      await myData.update(
+        'events',
+        {
+          'needSync': 1,
+          'syncAction': 'delete',
+          'lastModified': DateTime.now().millisecondsSinceEpoch,
+        },
+        where: 'id = ?',
+        whereArgs: [id],
+      );
+    } else {
+      await myData!.delete('events', where: 'id = ?', whereArgs: [id]);
+      // Delete all gifts associated with this event
+      await myData.delete('gifts', where: 'eventId = ?', whereArgs: [id]);
+    }
+  }
+
+  // Gift functions with sync support
+  Future<FbGift> insertNewGift(FbGift gift, {bool needSync = true}) async {
+    Database? myData = await myDataBase;
+    gift.needSync = needSync ? 1 : 0;
+    gift.syncAction = 'insert';
+    gift.lastModified = DateTime.now().millisecondsSinceEpoch;
+    var giftMap = gift.toMap();
+    await myData!.insert('gifts', giftMap);
+    return gift;
+  }
+
+  Future<List<FbGift>> getUnSyncedGifts() async {
+    Database? myData = await myDataBase;
+    List<Map<String, dynamic>> response = await myData!.query(
       'gifts',
-      gift.toMap(),
+      where: 'needSync = ?',
+      whereArgs: [1],
+    );
+    return response.map((e) => FbGift.fromJson(e)).toList();
+  }
+
+  Future<FbGift> updateGift(FbGift gift, {bool needSync = true}) async {
+    final db = await myDataBase;
+    var oldGift =
+        (await db!.query('gifts', where: 'id = ?', whereArgs: [gift.id]))
+            .map((e) => FbGift.fromJson(e))
+            .first;
+    gift.needSync = oldGift.needSync == 1 ? 1 : (needSync ? 1 : 0);
+    if (gift.needSync == 0) {
+      gift.syncAction = '';
+    } else {
+      gift.syncAction = oldGift.syncAction == 'insert' ? 'insert' : 'update';
+    }
+    gift.lastModified = DateTime.now().millisecondsSinceEpoch;
+    var giftMap = gift.toMap();
+    await db.update(
+      'gifts',
+      giftMap,
       where: 'id = ?',
       whereArgs: [gift.id],
     );
+    return gift;
   }
 
-  // getGiftsByPledgerId(int id) async {
-  //   Database? myData = await myDataBase;
-  //   var response = await myData!.query(
-  //       'gifts', where: 'pledgerId = ?', whereArgs: [id]);
-  //   List<Gift> gifts = response.map((e) => Gift.fromJson(e)).toList();
-  //   return gifts;
-  // }
-  //
-  // // get all gifts by user id where their pledger id is not null
-  // getAllPledgedGiftsByUserId(int id) async {
-  //   Database? myData = await myDataBase;
-  //   var response = await myData!.query(
-  //       'gifts', where: 'eventId IN (SELECT id FROM events WHERE userId = ?) AND pledgerId IS NOT NULL',
-  //       whereArgs: [id]);
-  //   List<Gift> gifts = response.map((e) => Gift.fromJson(e)).toList();
-  //   return gifts;
-  // }
-  //
-  // Future<List<GiftDetailsModel>> getIncomingGiftsWithDetails(int userId) async {
-  //   Database? myData = await myDataBase;
-  //
-  //   final List<Map<String, dynamic>> result = await myData!.rawQuery('''
-  //     SELECT
-  //       gifts.*,
-  //       events.name as eventName,
-  //       events.date as eventDate,
-  //       users.name as pledgerName
-  //     FROM gifts
-  //     INNER JOIN events ON gifts.eventId = events.id
-  //     INNER JOIN users ON gifts.pledgerId = users.id
-  //     WHERE events.userId = ?
-  //     AND gifts.pledgerId IS NOT NULL
-  //     ORDER BY events.date ASC
-  //   ''', [userId]);
-  //   print(result);
-  //   return result.map((map) => GiftDetailsModel.fromMap(map)).toList();
-  // }
-  //
-  //
-  //
-  // Future<List<GiftDetailsModel>> getOutgoingGiftsWithDetails(int userId) async {
-  //   Database? myData = await myDataBase;
-  //
-  //   final List<Map<String, dynamic>> result = await myData!.rawQuery('''
-  //     SELECT
-  //       gifts.*,
-  //       events.name as eventName,
-  //       events.date as eventDate,
-  //       events.userId as hostId,
-  //       host.name as hostName,
-  //       pledger.name as pledgerName
-  //     FROM gifts
-  //     INNER JOIN events ON gifts.eventId = events.id
-  //     INNER JOIN users pledger ON gifts.pledgerId = pledger.id
-  //     INNER JOIN users host ON events.userId = host.id
-  //     WHERE gifts.pledgerId = ?
-  //     ORDER BY events.date ASC
-  //   ''', [userId]);
-  //
-  //   return result.map((map) => GiftDetailsModel.fromMap(map)).toList();
-  // }
+  Future<void> deleteGiftById(String id, {bool needSync = true}) async {
+    Database? myData = await myDataBase;
+    if (needSync) {
+      var gift =
+          (await myData!.query('gifts', where: 'id = ?', whereArgs: [id]))
+              .map((e) => FbGift.fromJson(e))
+              .first;
+      if (gift.syncAction == 'insert') {
+        // if the gift was created offline and not synced yet, just delete it
+        await myData.delete('gifts', where: 'id = ?', whereArgs: [id]);
+        return;
+      }
 
+      // Mark for deletion instead of actually deleting
+      await myData.update(
+        'gifts',
+        {
+          'needSync': 1,
+          'syncAction': 'delete',
+          'lastModified': DateTime.now().millisecondsSinceEpoch,
+        },
+        where: 'id = ?',
+        whereArgs: [id],
+      );
+    } else {
+      await myData!.delete('gifts', where: 'id = ?', whereArgs: [id]);
+    }
+  }
 
+  Future<void> markSynced(String table, String id) async {
+    final db = await myDataBase;
+    await db!.update(
+      table,
+      {'needSync': 0, 'syncAction': ''},
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  Future<FbEvent> changeEventId(FbEvent oldEvent, String newId) async {
+    // insert the same data of the old event with the new id and delete the old event
+    final db = await myDataBase;
+    var newEvent = FbEvent(
+      id: newId,
+      name: oldEvent.name,
+      description: oldEvent.description,
+      date: oldEvent.date,
+      location: oldEvent.location,
+      category: oldEvent.category,
+      createdBy: oldEvent.createdBy,
+      needSync: 1,
+      syncAction: 'insert',
+      lastModified: DateTime.now().millisecondsSinceEpoch,
+    );
+    await db!.insert('events', newEvent.toMap());
+    // delete the old event
+    await db.delete('events', where: 'id = ?', whereArgs: [oldEvent.id]);
+    // change any gifts referenced the old id
+    await db.update(
+      'gifts',
+      {'eventId': newId},
+      where: 'eventId = ?',
+      whereArgs: [oldEvent.id],
+    );
+    return newEvent;
+  }
+
+  Future<FbGift> changeGiftId(FbGift oldGift, String newId) async {
+    // insert the same data of the old gift with the new id and delete the old gift
+    final db = await myDataBase;
+    var newGift = FbGift(
+      id: newId,
+      eventId: oldGift.eventId,
+      name: oldGift.name,
+      description: oldGift.description,
+      category: oldGift.category,
+      price: oldGift.price,
+      status: oldGift.status,
+      imageUrl: oldGift.imageUrl,
+      pledgedBy: oldGift.pledgedBy,
+      needSync: 1,
+      syncAction: 'insert',
+      lastModified: DateTime.now().millisecondsSinceEpoch,
+    );
+    await db!.insert('gifts', newGift.toMap());
+    // delete the old gift
+    await db.delete('gifts', where: 'id = ?', whereArgs: [oldGift.id]);
+    return newGift;
+  }
+
+  Future<List<FbGift>> getGiftsByEventId(String eventId) async {
+    Database? myData = await myDataBase;
+    List<Map<String, dynamic>> response = await myData!.query(
+      'gifts',
+      where: 'eventId = ?',
+      whereArgs: [eventId],
+    );
+    return response.map((e) => FbGift.fromJson(e)).toList();
+  }
+
+  Future<List<FbEvent>> getEvents() async {
+    Database? myData = await myDataBase;
+    List<Map<String, dynamic>> response = await myData!.query('events');
+    return response.map((e) => FbEvent.fromJson(e)).toList();
+  }
+
+  Future<FbGift> getGiftById(String id) {
+    return myDataBase.then((db) async {
+      List<Map<String, dynamic>> response = await db!.query(
+        'gifts',
+        where: 'id = ?',
+        whereArgs: [id],
+      );
+      return FbGift.fromJson(response.first);
+    });
+  }
 }
