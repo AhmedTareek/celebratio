@@ -1,13 +1,9 @@
 import 'package:celebratio/CustomWidget.dart';
 import 'package:celebratio/Model/fb_pledged_gifts_to_me.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import 'Model/gift_details.dart';
-import 'Model/local_db.dart';
 import 'app_state.dart';
-import 'gift_details_page.dart';
 
 class InGifts extends StatefulWidget {
   const InGifts({super.key});
@@ -29,6 +25,7 @@ class _InGiftsState extends State<InGifts> {
     try {
       var appState = Provider.of<ApplicationState>(context, listen: false);
       var temp = await appState.getGiftsToBeGivenToMe();
+      print('temp: $temp');
       // var temp = await db.getIncomingGiftsWithDetails(loggedInUserId);
       // filter temp based on the event date being today or after
       temp = temp.where((gift) {
@@ -77,14 +74,6 @@ class _InGiftsState extends State<InGifts> {
               Text('Pledged by: ${giftDetail.pledgedBy}'),
             ],
           ),
-          onTap: () {
-            Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (context) => GiftDetails(
-                        giftOwnerId: FirebaseAuth.instance.currentUser!.uid,
-                        gift: giftDetail.gift)));
-          },
         );
       },
       itemCount: incomingGifts.isEmpty ? 1 : incomingGifts.length,

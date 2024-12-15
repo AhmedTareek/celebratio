@@ -35,13 +35,16 @@ class _EditEventPageState extends State<EditEventPage> {
   void _updateEvent() async {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
-      await widget.controller.updateEvent(widget.event.id!, {
-        'name': name,
-        'description': description,
-        'date': date.toIso8601String(),
-        'location': location,
-        'category': category,
-      });
+      FbEvent updatedEvent = FbEvent(
+        id: widget.event.id,
+        name: name,
+        description: description,
+        date: date,
+        location: location,
+        category: category,
+        createdBy: widget.event.createdBy,
+      );
+      await widget.controller.updateEvent(updatedEvent);
 
       if (mounted) {
         Navigator.pop(context); // Return to the previous screen

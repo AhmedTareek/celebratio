@@ -4,10 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'dart:developer';
 
-import 'Model/gift_details.dart';
-import 'Model/local_db.dart';
 import 'app_state.dart';
-import 'gift_details_page.dart';
 
 class OutGifts extends StatefulWidget {
   const OutGifts({super.key});
@@ -75,15 +72,6 @@ class _OutGiftsState extends State<OutGifts> {
               Text('Event hosted by: ${giftDetail.eventHost}'),
             ],
           ),
-          onTap: () {
-            Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (context) => GiftDetails(
-                          gift: giftDetail.gift,
-                          giftOwnerId: giftDetail.eventHost,
-                        )));
-          },
         );
       },
       itemCount: outgoingGifts.isEmpty ? 1 : outgoingGifts.length,

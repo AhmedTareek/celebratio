@@ -40,13 +40,8 @@ class _GiftDetailsState extends State<GiftDetails> {
                       gift: gift,
                       onSave: (updatedGift) async {
                         // Update the controller with the updated gift
-                        bool result = await widget.controller.editGift(
-                          giftId: updatedGift.id,
-                          name: updatedGift.name,
-                          price: updatedGift.price,
-                          description: updatedGift.description,
-                          category: updatedGift.category,
-                        );
+                        bool result =
+                            await widget.controller.editGift(updatedGift);
                         if (result) {
                           // Update the state with the new gift values
                           setState(() {
@@ -58,7 +53,9 @@ class _GiftDetailsState extends State<GiftDetails> {
                         } else if (context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
-                                content: Text('Error updating gift')),
+                                content: Text(
+                                    'Error updating gift you may be offline '
+                                    'or the gift is already pledged')),
                           );
                         }
                       },
@@ -87,11 +84,12 @@ class _GiftDetailsState extends State<GiftDetails> {
     );
   }
 
-  Widget _buildImageHeader(ThemeData theme,String? url) {
+  Widget _buildImageHeader(ThemeData theme, String? url) {
     return Stack(
       children: [
         Image.network(
-          url ??'https://platform.vox.com/wp-content/uploads/sites/2/chorus/uploads/chorus_asset/file/23324816/elden_1.png?quality=90&strip=all&crop=7.8125,0,84.375,100',
+          url ??
+              'https://platform.vox.com/wp-content/uploads/sites/2/chorus/uploads/chorus_asset/file/23324816/elden_1.png?quality=90&strip=all&crop=7.8125,0,84.375,100',
           fit: BoxFit.cover,
           width: double.infinity,
           height: 250,

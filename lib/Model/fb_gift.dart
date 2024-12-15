@@ -1,4 +1,4 @@
-class FbGift{
+class FbGift {
   String id;
   String eventId;
   String name;
@@ -8,6 +8,9 @@ class FbGift{
   String status;
   String? imageUrl;
   String? pledgedBy;
+  int? needSync;
+  String? syncAction;
+  int? lastModified;
 
   FbGift({
     required this.id,
@@ -19,6 +22,9 @@ class FbGift{
     required this.status,
     this.imageUrl,
     this.pledgedBy,
+    this.needSync,
+    this.syncAction,
+    this.lastModified,
   });
 
   factory FbGift.fromFirestore(Map<String, dynamic> data, String id) {
@@ -48,5 +54,45 @@ class FbGift{
     };
   }
 
+  toMap() {
+    return {
+      'id': id,
+      'eventId': eventId,
+      'name': name,
+      'description': description,
+      'category': category,
+      'price': price,
+      'status': status,
+      'imageUrl': imageUrl,
+      'pledgedBy': pledgedBy,
+      'needSync': needSync,
+      'syncAction': syncAction,
+      'lastModified': lastModified,
+    };
+  }
 
+  factory FbGift.fromJson(Map<String, dynamic> json) {
+    return FbGift(
+      id: json['id'],
+      eventId: json['eventId'],
+      name: json['name'],
+      description: json['description'],
+      category: json['category'],
+      price: json['price'],
+      status: json['status'],
+      imageUrl: json['imageUrl'],
+      pledgedBy: json['pledgedBy'],
+      needSync: json['needSync'],
+      syncAction: json['syncAction'],
+      lastModified: json['lastModified'],
+    );
+  }
+
+  @override
+  String toString() {
+    return 'FbGift{id: $id, eventId: $eventId, name: $name, description: '
+        '$description, category: $category, price: $price, status: $status,'
+        ' imageUrl: $imageUrl, pledgedBy: $pledgedBy, needSync: $needSync,'
+        ' syncAction: $syncAction, lastModified: $lastModified}';
+  }
 }

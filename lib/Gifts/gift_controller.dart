@@ -164,36 +164,26 @@ class GiftController extends ChangeNotifier {
   }
 
   // Delete gift
-  Future<void> deleteGift(String giftId) async {
+  Future<bool> deleteGift(String giftId) async {
     try {
       var appState = Provider.of<ApplicationState>(context, listen: false);
-      await appState.deleteGift(giftId);
-      _allGifts.removeWhere((gift) => gift.id == giftId);
-      filterGifts();
+      bool result = await appState.deleteGift(giftId);
+      if (result) {
+        _allGifts.removeWhere((gift) => gift.id == giftId);
+        filterGifts();
+        return true;
+      }
+      return false;
     } catch (e) {
       print('Error deleting gift: $e');
       rethrow;
     }
   }
 
-  Future<bool> editGift({
-    required String giftId,
-    required String name,
-    required double price,
-    required String description,
-    required String category,
-  }) async {
+  Future<bool> editGift(FbGift gift) async {
     try {
       var appState = Provider.of<ApplicationState>(context, listen: false);
-      bool result = await appState.editGift(
-        giftId: giftId,
-        updatedData: {
-          'name': name,
-          'price': price,
-          'description': description,
-          'category': category,
-        },
-      );
+      bool result = await appState.updateGift(gift);
       if (result) {
         await fetchGifts();
         return true;
@@ -211,7 +201,7 @@ class GiftController extends ChangeNotifier {
   }) async {
     try {
       var appState = Provider.of<ApplicationState>(context, listen: false);
-      bool result = await appState.editGift(
+      bool result = await appState.pledgeGift(
         giftId: giftId,
         updatedData: {
           'status': 'Pledged',

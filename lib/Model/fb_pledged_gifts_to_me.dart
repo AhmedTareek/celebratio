@@ -13,16 +13,20 @@ class PledgedGiftToMe {
     required this.pledgedBy,
   });
 
-  factory PledgedGiftToMe.fromData(
-      Map<String, dynamic> giftData,
-      String giftId,
-      Map<String, dynamic>? eventData
-      ) {
+  factory PledgedGiftToMe.fromData(Map<String, dynamic> giftData, String giftId,
+      Map<String, dynamic>? eventData) {
     return PledgedGiftToMe(
       gift: FbGift.fromFirestore(giftData, giftId),
       eventName: eventData?['name'] ?? '',
-      eventDate: DateTime.parse(eventData?['date'] as String? ?? DateTime.now().toIso8601String()),
+      eventDate: DateTime.parse(
+          eventData?['date'] as String? ?? DateTime.now().toIso8601String()),
       pledgedBy: giftData['pledgedBy'] as String,
     );
+  }
+
+  @override
+  String toString() {
+    return 'PledgedGiftToMe{gift: {$gift}, eventName: $eventName, '
+        'eventDate: $eventDate, pledgedBy: $pledgedBy}';
   }
 }

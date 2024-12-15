@@ -85,26 +85,25 @@ class EventsController extends ChangeNotifier {
 
   // Delete an event
   Future<void> deleteEvent(String eventId) async {
-    try {
+    // try {
       var appState = Provider.of<ApplicationState>(context, listen: false);
-      await appState.deleteEvent(eventId: eventId);
+      await appState.deleteEvent(eventId);
 
       // Remove from local lists
       _allEvents.removeWhere((event) => event.id == eventId);
       filterEvents(); // This will also update filtered events
-    } catch (e) {
-      print('Error deleting event: $e');
-      rethrow; // Rethrow to handle in UI
-    }
+    // } catch (e) {
+    //   print('Error deleting event: $e');
+    //   rethrow;
+    //   // rethrow; // Rethrow to handle in UI
+    // }
   }
 
   // update an event
-  Future<void> updateEvent(String eventId,
-      Map<String, dynamic> updatedData) async {
+  Future<void> updateEvent(FbEvent event) async {
     try {
       var appState = Provider.of<ApplicationState>(context, listen: false);
-      await appState.editEvent(
-          eventId: eventId, updatedData: updatedData);
+      await appState.updateEvent(event);
     } catch (e) {
       print('Error updating event: $e');
       rethrow; // Rethrow to handle in UI

@@ -10,8 +10,13 @@ class FriendsController extends ChangeNotifier {
   List<FbFriend> _allFriends = [];
   List<FbFriend> _filteredFriends = [];
 
+
+
+
   FriendsController(this.context) {
     _appState = Provider.of<ApplicationState>(context, listen: false);
+    _appState.addListener(fetchFriends); // problem if you are not in same page as
+    // dispose will be called on this class
     searchController.addListener(_filterFriends);
   }
 
@@ -58,6 +63,7 @@ class FriendsController extends ChangeNotifier {
 
   @override
   void dispose() {
+    _appState.removeListener(fetchFriends);
     searchController.dispose();
     super.dispose();
   }

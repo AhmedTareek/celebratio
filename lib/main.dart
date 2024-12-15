@@ -10,7 +10,7 @@ import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import 'app_state.dart';
 import 'events/events_page.dart';
-import 'friends_page.dart';
+import 'Friends/friends_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -151,6 +151,13 @@ final _router = GoRouter(
               actions: [
                 SignedOutAction((context) {
                   context.pushReplacement('/');
+                }),
+                DisplayNameChangedAction((context, oldName, newName) {
+                  //update users document with the new name
+                  final user = FirebaseAuth.instance.currentUser;
+                  final userDocRef =
+                      FirebaseFirestore.instance.collection('users').doc(user!.uid);
+                  userDocRef.update({'name': newName});
                 }),
               ],
             );

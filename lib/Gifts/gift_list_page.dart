@@ -115,9 +115,19 @@ class _GiftListState extends State<GiftList> {
                                 title: const Text('Delete'),
                                 onTap: () async {
                                   try {
-                                    await _controller.deleteGift(gift.id);
-                                    if (context.mounted) {
+                                    bool result =
+                                        await _controller.deleteGift(gift.id);
+                                    if (result && context.mounted) {
                                       Navigator.pop(context);
+                                    } else if (context.mounted) {
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        const SnackBar(
+                                          content: Text(
+                                              'Error deleting gift you may be'
+                                              ' offline or the gift is already pledged'),
+                                        ),
+                                      );
                                     }
                                   } catch (e) {
                                     if (context.mounted) {

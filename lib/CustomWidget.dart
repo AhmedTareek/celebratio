@@ -1,4 +1,3 @@
-import 'package:celebratio/Authentication/authentication.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -22,7 +21,7 @@ class CustomWidget extends StatefulWidget {
   final Color? primaryColorLight;
 
   const CustomWidget({
-    Key? key,
+    super.key,
     required this.filterButtons,
     required this.sortOptions,
     required this.tileBuilder,
@@ -39,7 +38,7 @@ class CustomWidget extends StatefulWidget {
     this.secondaryHeaderColor,
     this.primaryColor,
     this.primaryColorLight,
-  }) : super(key: key);
+  });
 
   @override
   State<CustomWidget> createState() => _CustomWidgetState();
@@ -68,43 +67,7 @@ class _CustomWidgetState extends State<CustomWidget> {
     });
   }
 
-  void _scrollToTop() {
-    _scrollController.animateTo(
-      0.0,
-      duration: const Duration(milliseconds: 500),
-      curve: Curves.easeInOut,
-    );
-  }
 
-  void _showOptionsDialog(int index) {
-    showModalBottomSheet(
-      context: context,
-      builder: (BuildContext context) {
-        return Wrap(
-          children: <Widget>[
-            if (widget.onTileEdit != null)
-              ListTile(
-                leading: Icon(Icons.edit),
-                title: Text('Edit'),
-                onTap: () {
-                  Navigator.pop(context);
-                  widget.onTileEdit!(index);
-                },
-              ),
-            if (widget.onTileDelete != null)
-              ListTile(
-                leading: Icon(Icons.delete),
-                title: Text('Delete'),
-                onTap: () {
-                  Navigator.pop(context);
-                  widget.onTileDelete!(index);
-                },
-              ),
-          ],
-        );
-      },
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -215,6 +178,14 @@ class _CustomWidgetState extends State<CustomWidget> {
       }
     });
   }
+
+  void _scrollToTop() {
+    _scrollController.animateTo(
+      0.0,
+      duration: const Duration(milliseconds: 500),
+      curve: Curves.easeInOut,
+    );
+  }
 }
 
 // Supporting classes
@@ -263,12 +234,6 @@ class _CustomSortDialogState extends State<CustomSortDialog> {
   void initState() {
     super.initState();
     selectedButtonIndex = widget.initialSelection;
-  }
-
-  void clearSelection() {
-    setState(() {
-      selectedButtonIndex = -1;
-    });
   }
 
   @override
@@ -358,5 +323,11 @@ class _CustomSortDialogState extends State<CustomSortDialog> {
         ),
       ],
     );
+  }
+
+  void clearSelection() {
+    setState(() {
+      selectedButtonIndex = -1;
+    });
   }
 }
