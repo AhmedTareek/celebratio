@@ -16,6 +16,7 @@ import 'Model/fb_pledged_gift.dart';
 import 'Model/fb_pledged_gifts_to_me.dart';
 import 'Model/local_db.dart';
 import 'firebase_options.dart';
+import 'notification_manager.dart';
 
 class ApplicationState extends ChangeNotifier {
   final DataBase _localDb = DataBase();
@@ -51,8 +52,10 @@ class ApplicationState extends ChangeNotifier {
     FirebaseAuth.instance.userChanges().listen((user) {
       if (user != null) {
         _loggedIn = true;
+        initNotificationManager();
       } else {
         _loggedIn = false;
+        removeDeviceToken();
       }
       notifyListeners();
     });
@@ -423,7 +426,9 @@ class ApplicationState extends ChangeNotifier {
   }
 
   Future<bool> pledgeGift(
-      {required String giftId,
+      {
+        required String creatorId,
+        required String giftId,
       required Map<String, String> updatedData}) async {
     final giftRef = FirebaseFirestore.instance.collection('gifts').doc(giftId);
     // check if the status of the gift is pledged then refuse any edits
@@ -432,6 +437,35 @@ class ApplicationState extends ChangeNotifier {
       return false;
     }
     await giftRef.update(updatedData);
+    // get the token of the creator he may have no token
+    final creatorDoc = await FirebaseFirestore.instance.collection('users').doc(creatorId).get();
+    final creatorToken = creatorDoc.data()!['token'];
+    if (creatorToken != null) {
+       NotificationManager.sendNotification(
+          targetToken: creatorToken,
+          title: 'Gift Pledged',
+          body: 'Your gift ${giftDoc.data()!['name']} has been pledged');
+    }
     return true;
   }
+
+  // init NotificationManager and save the token to the firestore
+  Future<void> initNotificationManager() async {
+    await NotificationManager.initialize();
+    String? token = await NotificationManager.getDeviceToken();
+    if (token != null) {
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(FirebaseAuth.instance.currentUser!.uid)
+          .update({'token': token});
+    }
+  }
+  // remove the device token from the firestore
+  Future<void> removeDeviceToken() async {
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(FirebaseAuth.instance.currentUser!.uid)
+        .update({'token': FieldValue.delete()});
+  }
+
 }

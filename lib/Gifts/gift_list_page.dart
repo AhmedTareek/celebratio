@@ -96,6 +96,7 @@ class _GiftListState extends State<GiftList> {
                 context,
                 MaterialPageRoute(
                   builder: (context) => GiftDetails(
+                    event: _controller.currentEvent,
                     controller: _controller,
                     gift: gift,
                   ),

@@ -196,12 +196,14 @@ class GiftController extends ChangeNotifier {
   }
 
   Future<bool> pledgeGift({
+    required String creatorId,
     required String giftId,
     required String userId,
   }) async {
     try {
       var appState = Provider.of<ApplicationState>(context, listen: false);
       bool result = await appState.pledgeGift(
+        creatorId: creatorId,
         giftId: giftId,
         updatedData: {
           'status': 'Pledged',
