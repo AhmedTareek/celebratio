@@ -161,15 +161,19 @@ class ApplicationState extends ChangeNotifier {
     final localId = const Uuid().v4();
     gift.id = localId;
     gift = await _localDb.insertNewGift(gift);
-    if (_isOnline) await _syncGift(gift);
+    if (_isOnline && gift.syncAction != 'draft') await _syncGift(gift);
   }
 
   Future<bool> updateGift(FbGift gift) async {
+    var localGift = await _localDb.getGiftById(gift.id);
+    if(localGift.syncAction!=null && localGift.syncAction == 'draft') {
+      localGift = await _localDb.updateGift(gift);
+      return true;
+    }
     // no updating for gifts allowed when offline
     // because someone may have pledged it but if the gift is made in offline
     // and not synced yet then we can update it
     if (!_isOnline) {
-      var localGift = await _localDb.getGiftById(gift.id);
       if (localGift.syncAction == 'insert') {
         // this is not synced yet so we can update it
         localGift = await _localDb.updateGift(gift);
@@ -191,9 +195,12 @@ class ApplicationState extends ChangeNotifier {
   Future<bool> deleteGift(String giftId) async {
     // no deleting for gifts allowed when offline because someone may have pledged it
     // but if the gift is made in offline and not synced yet then we can delete it
-
+    var localGift = await _localDb.getGiftById(giftId);
+    if(localGift.syncAction == 'draft') {
+      await _localDb.deleteGiftById(giftId, needSync: false);
+      return true;
+    }
     if (!_isOnline) {
-      var localGift = await _localDb.getGiftById(giftId);
       if (localGift.syncAction == 'insert') {
         // this is not synced yet so we can delete it
         await _localDb.deleteGiftById(giftId, needSync: false);
@@ -222,18 +229,17 @@ class ApplicationState extends ChangeNotifier {
         .v4(); // thats like a temp id till we sync it with firestore
     event.id = localId;
     event = await _localDb.insertNewEvent(event);
-    print("am i online? $_isOnline");
-    if (_isOnline) await _syncEvent(event);
+    if (_isOnline && event.syncAction != 'draft') await _syncEvent(event);
   }
 
   Future<void> updateEvent(FbEvent event) async {
     event = await _localDb.updateEvent(event);
-    if (_isOnline) await _syncEvent(event);
+    if (_isOnline && event.syncAction != 'draft') await _syncEvent(event);
   }
 
   Future<void> deleteEvent(String eventId) async {
-    await _localDb.deleteEventById(eventId);
-    if (_isOnline) {
+    var event = await _localDb.deleteEventById(eventId);
+    if (_isOnline && (event.syncAction != 'draft' || event.syncAction != 'insert')) {
       try {
         await _deleteEventFromFirestore(eventId);
         await _localDb.deleteEventById(eventId, needSync: false);
@@ -296,14 +302,19 @@ class ApplicationState extends ChangeNotifier {
         return localGifts;
       }
     }
+    // get drafted gifts
+    final draftedGifts = await _localDb.getDraftGiftsByEventId(eventId);
+
     final giftsQuery = await FirebaseFirestore.instance
         .collection('gifts')
         .where('event', isEqualTo: eventId)
         .get();
     // create from firestore then return a list of FbGift objects
-    return giftsQuery.docs
+    List<FbGift> gifts =  giftsQuery.docs
         .map((doc) => FbGift.fromFirestore(doc.data(), doc.id))
         .toList();
+    gifts.addAll(draftedGifts);
+    return gifts;
   }
 
   Future<List<FbEvent>> getEventsByFriendId(String friendId) async {
@@ -319,10 +330,15 @@ class ApplicationState extends ChangeNotifier {
         .where('createdBy', isEqualTo: friendId)
         .get();
     // create from firestore then return a list of FbEvent objects
-    print("Events Query: $eventsQuery" + "finshed");
-    return eventsQuery.docs
+    List<FbEvent> events = eventsQuery.docs
         .map((doc) => FbEvent.fromFirestore(doc.data(), doc.id))
         .toList();
+    // get drafted events
+    if(friendId == FirebaseAuth.instance.currentUser!.uid) {
+      final draftedEvents = await _localDb.getDraftEvents();
+      events.addAll(draftedEvents);
+    }
+    return events;
   }
 
   Future<List<FbFriend>> getFriends() async {
@@ -426,10 +442,10 @@ class ApplicationState extends ChangeNotifier {
   }
 
   Future<bool> pledgeGift(
-      {
-        required String creatorId,
-        required String giftId,
-      required Map<String, String> updatedData}) async {
+      {required String creatorId,
+      required String giftId,
+      required Map<String, String> updatedData})
+  async {
     final giftRef = FirebaseFirestore.instance.collection('gifts').doc(giftId);
     // check if the status of the gift is pledged then refuse any edits
     final giftDoc = await giftRef.get();
@@ -438,10 +454,13 @@ class ApplicationState extends ChangeNotifier {
     }
     await giftRef.update(updatedData);
     // get the token of the creator he may have no token
-    final creatorDoc = await FirebaseFirestore.instance.collection('users').doc(creatorId).get();
+    final creatorDoc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(creatorId)
+        .get();
     final creatorToken = creatorDoc.data()!['token'];
     if (creatorToken != null) {
-       NotificationManager.sendNotification(
+      NotificationManager.sendNotification(
           targetToken: creatorToken,
           title: 'Gift Pledged',
           body: 'Your gift ${giftDoc.data()!['name']} has been pledged');
@@ -460,6 +479,7 @@ class ApplicationState extends ChangeNotifier {
           .update({'token': token});
     }
   }
+
   // remove the device token from the firestore
   Future<void> removeDeviceToken() async {
     await FirebaseFirestore.instance
@@ -467,5 +487,4 @@ class ApplicationState extends ChangeNotifier {
         .doc(FirebaseAuth.instance.currentUser!.uid)
         .update({'token': FieldValue.delete()});
   }
-
 }

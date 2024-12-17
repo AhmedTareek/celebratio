@@ -197,39 +197,39 @@ class DataBase {
         await db.execute('DELETE FROM events');
         await db.execute('DELETE FROM gifts');
 
-      //   // Create Events table with sync status
-      //   await db.execute('''
-      //   CREATE TABLE IF NOT EXISTS events (
-      //     id TEXT PRIMARY KEY,
-      //     name TEXT,
-      //     description TEXT,
-      //     date TEXT,
-      //     location TEXT,
-      //     category TEXT,
-      //     createdBy TEXT,
-      //     needSync INTEGER DEFAULT 0,
-      //     syncAction TEXT,
-      //     lastModified INTEGER
-      //   )
-      // ''');
-      //
-      //   // Create Gifts table with sync status
-      //   await db.execute('''
-      //   CREATE TABLE IF NOT EXISTS gifts (
-      //     id TEXT PRIMARY KEY,
-      //     name TEXT,
-      //     description TEXT,
-      //     category TEXT,
-      //     price REAL,
-      //     status TEXT,
-      //     eventId TEXT,
-      //     imageUrl TEXT,
-      //     pledgedBy TEXT,
-      //     needSync INTEGER DEFAULT 0,
-      //     syncAction TEXT,
-      //     lastModified INTEGER
-      //   )
-      // ''');
+        //   // Create Events table with sync status
+        //   await db.execute('''
+        //   CREATE TABLE IF NOT EXISTS events (
+        //     id TEXT PRIMARY KEY,
+        //     name TEXT,
+        //     description TEXT,
+        //     date TEXT,
+        //     location TEXT,
+        //     category TEXT,
+        //     createdBy TEXT,
+        //     needSync INTEGER DEFAULT 0,
+        //     syncAction TEXT,
+        //     lastModified INTEGER
+        //   )
+        // ''');
+        //
+        //   // Create Gifts table with sync status
+        //   await db.execute('''
+        //   CREATE TABLE IF NOT EXISTS gifts (
+        //     id TEXT PRIMARY KEY,
+        //     name TEXT,
+        //     description TEXT,
+        //     category TEXT,
+        //     price REAL,
+        //     status TEXT,
+        //     eventId TEXT,
+        //     imageUrl TEXT,
+        //     pledgedBy TEXT,
+        //     needSync INTEGER DEFAULT 0,
+        //     syncAction TEXT,
+        //     lastModified INTEGER
+        //   )
+        // ''');
         print('Database has been upgraded to version $newVersion');
       }
     });
@@ -246,8 +246,12 @@ class DataBase {
   // Event functions with sync support
   Future<FbEvent> insertNewEvent(FbEvent event, {bool needSync = true}) async {
     Database? myData = await myDataBase;
-    event.needSync = needSync ? 1 : 0;
-    event.syncAction = 'insert';
+    if(event.syncAction != null && event.syncAction == 'draft') {
+      event.needSync = 0;
+    } else {
+      event.needSync = needSync ? 1 : 0;
+      event.syncAction = 'insert';
+    }
     event.lastModified = DateTime.now().millisecondsSinceEpoch;
     var eventMap = event.toMap();
     await myData!.insert('events', eventMap);
@@ -272,12 +276,15 @@ class DataBase {
             .query('events', where: 'id = ?', whereArgs: [updatedEvent.id]))
         .map((e) => FbEvent.fromJson(e))
         .first;
+    if(oldEvent.syncAction != 'draft') {
+      updatedEvent.needSync = oldEvent.needSync == 1 ? 1 : (needSync ? 1 : 0);
+      // this is done because if the user was offline and created an event then update it
+      // we need
+      updatedEvent.syncAction =
+      oldEvent.syncAction == 'insert' ? 'insert' : 'update';
+    }
 
-    updatedEvent.needSync = oldEvent.needSync == 1 ? 1 : (needSync ? 1 : 0);
-    // this is done because if the user was offline and created an event then update it
-    // we need
-    updatedEvent.syncAction =
-        oldEvent.syncAction == 'insert' ? 'insert' : 'update';
+
     updatedEvent.lastModified = DateTime.now().millisecondsSinceEpoch;
     var eventMap = updatedEvent.toMap();
     await db.update(
@@ -289,18 +296,18 @@ class DataBase {
     return updatedEvent;
   }
 
-  Future<void> deleteEventById(String id, {bool needSync = true}) async {
+  Future<FbEvent> deleteEventById(String id, {bool needSync = true}) async {
     Database? myData = await myDataBase;
+    var event =
+        (await myData!.query('events', where: 'id = ?', whereArgs: [id]))
+            .map((e) => FbEvent.fromJson(e))
+            .first;
     if (needSync) {
       // get the event from the database
-      var event =
-          (await myData!.query('events', where: 'id = ?', whereArgs: [id]))
-              .map((e) => FbEvent.fromJson(e))
-              .first;
       if (event.syncAction == 'insert') {
-        // if the event was created offline and not synced yet, just delete it
+        // if the event was created offline or draft and not synced yet, just delete it
         await myData.delete('events', where: 'id = ?', whereArgs: [id]);
-        return;
+        return event;
       }
       // Mark for deletion instead of actually deleting
       await myData.update(
@@ -313,18 +320,24 @@ class DataBase {
         where: 'id = ?',
         whereArgs: [id],
       );
+      return event;
     } else {
       await myData!.delete('events', where: 'id = ?', whereArgs: [id]);
       // Delete all gifts associated with this event
       await myData.delete('gifts', where: 'eventId = ?', whereArgs: [id]);
+      return event;
     }
   }
 
   // Gift functions with sync support
   Future<FbGift> insertNewGift(FbGift gift, {bool needSync = true}) async {
     Database? myData = await myDataBase;
-    gift.needSync = needSync ? 1 : 0;
-    gift.syncAction = 'insert';
+    if (gift.syncAction != null && gift.syncAction == 'draft') {
+      gift.needSync = 0;
+    } else {
+      gift.needSync = needSync ? 1 : 0;
+      gift.syncAction = 'insert';
+    }
     gift.lastModified = DateTime.now().millisecondsSinceEpoch;
     var giftMap = gift.toMap();
     await myData!.insert('gifts', giftMap);
@@ -347,12 +360,15 @@ class DataBase {
         (await db!.query('gifts', where: 'id = ?', whereArgs: [gift.id]))
             .map((e) => FbGift.fromJson(e))
             .first;
-    gift.needSync = oldGift.needSync == 1 ? 1 : (needSync ? 1 : 0);
-    if (gift.needSync == 0) {
-      gift.syncAction = '';
-    } else {
-      gift.syncAction = oldGift.syncAction == 'insert' ? 'insert' : 'update';
+    if (oldGift.syncAction != 'draft') {
+      gift.needSync = oldGift.needSync == 1 ? 1 : (needSync ? 1 : 0);
+      if (gift.needSync == 0) {
+        gift.syncAction = '';
+      } else {
+        gift.syncAction = oldGift.syncAction == 'insert' ? 'insert' : 'update';
+      }
     }
+
     gift.lastModified = DateTime.now().millisecondsSinceEpoch;
     var giftMap = gift.toMap();
     await db.update(
@@ -479,5 +495,25 @@ class DataBase {
       );
       return FbGift.fromJson(response.first);
     });
+  }
+
+  Future<List<FbEvent>> getDraftEvents() async {
+    Database? myData = await myDataBase;
+    List<Map<String, dynamic>> response = await myData!.query(
+      'events',
+      where: 'syncAction = ?',
+      whereArgs: ['draft'],
+    );
+    return response.map((e) => FbEvent.fromJson(e)).toList();
+  }
+
+  Future<List<FbGift>> getDraftGiftsByEventId(String eventId) async {
+    Database? myData = await myDataBase;
+    List<Map<String, dynamic>> response = await myData!.query(
+      'gifts',
+      where: 'eventId = ? AND syncAction = ?',
+      whereArgs: [eventId, 'draft'],
+    );
+    return response.map((e) => FbGift.fromJson(e)).toList();
   }
 }
