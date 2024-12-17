@@ -39,6 +39,9 @@ class _EventState extends State<EventsPage> {
 
   @override
   Widget build(BuildContext context) {
+    var draftTextStyle = TextStyle(
+      color: Colors.grey[600],
+    );
     return CustomWidget(
       title: _setAppBarTitle(),
       newButton: widget.userUid == loggedInUserId
@@ -88,29 +91,40 @@ class _EventState extends State<EventsPage> {
         final formatter = DateFormat('yyyy-MM-dd');
         final event = _controller.filteredEvents[index];
         return ListTile(
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => GiftList(eventData: event),
-              ),
-            );
-          },
-          onLongPress: widget.userUid == loggedInUserId
-              ? () => _showOptionsDialog(index)
-              : null,
-          trailing: Text(formatter.format(event.date)),
-          title: Text(event.name),
-          subtitle: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                event.description,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
-          ),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => GiftList(eventData: event),
+                ),
+              );
+            },
+            onLongPress: widget.userUid == loggedInUserId
+                ? () => _showOptionsDialog(index)
+                : null,
+            title: Text(
+              event.name,
+              style: event.syncAction == 'draft' ? draftTextStyle : null,
+            ),
+            subtitle: event.syncAction == 'draft'
+                ? Text(
+                    'This is a draft event',
+                    style: draftTextStyle,
+                  )
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        event.description,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+            trailing: Text(
+              formatter.format(event.date),
+              style: event.syncAction == 'draft' ? draftTextStyle : null,
+            )
         );
       },
       itemCount: _controller.filteredEvents.length,

@@ -80,6 +80,7 @@ class _GiftDetailsState extends State<GiftDetails> {
               _buildDescription(theme, gift),
               if (!isOwner && gift.status == 'Available')
                 _buildPledgeButton(theme, gift),
+              if (gift.syncAction == 'draft') _buildPublishButton(theme, gift),
             ],
           ),
         ),
@@ -213,6 +214,49 @@ class _GiftDetailsState extends State<GiftDetails> {
           },
           child: Text(
             'Pledge This Gift',
+            style: theme.textTheme.labelLarge?.copyWith(
+              color: theme.colorScheme.onPrimary,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPublishButton(ThemeData theme, FbGift gift) {
+    return Container(
+      alignment: Alignment.bottomCenter,
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 20.0),
+      child: SizedBox(
+        width: double.infinity,
+        child: ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            padding: const EdgeInsets.all(16),
+            backgroundColor: theme.colorScheme.primary,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+          onPressed: () async {
+            try {
+              bool result = false;
+              // bool result = await widget.controller.publishGift(gift.id);
+              if (result) {
+                setState(() {});
+              } else if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('gift already published')),
+                );
+              }
+            } catch (e) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                    content: Text('Error publishing gift: ${e.toString()}')),
+              );
+            }
+          },
+          child: Text(
+            'Publish This Gift',
             style: theme.textTheme.labelLarge?.copyWith(
               color: theme.colorScheme.onPrimary,
             ),
