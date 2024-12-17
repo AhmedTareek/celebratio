@@ -86,7 +86,6 @@ class ApplicationState extends ChangeNotifier {
     // update their status and pledgedBy in local db
     for (var gift in giftsToMe) {
       await _localDb.updateGift(gift.gift, needSync: false);
-      print("gift to be updated${gift.gift}");
     }
   }
 
@@ -94,11 +93,9 @@ class ApplicationState extends ChangeNotifier {
     try {
       switch (event.syncAction) {
         case 'insert':
-          print("syncing insert event");
           final eventRef =
-              FirebaseFirestore.instance.collection('events').doc();
+              FirebaseFirestore.instance.collection('events').doc(event.id);
           await eventRef.set(event.toFirestore());
-          print("eventRef: $eventRef");
           // Add the event in the user's events list
           await FirebaseFirestore.instance
               .collection('users')
@@ -107,7 +104,7 @@ class ApplicationState extends ChangeNotifier {
             'events': FieldValue.arrayUnion([eventRef.id]),
           });
           // Update the event with the firestore id and mark it as synced
-          event = await _localDb.changeEventId(event, eventRef.id);
+          // event = await _localDb.changeEventId(event, eventRef.id);
           await _localDb.markSynced('events', event.id!);
           break;
         case 'update':
@@ -131,8 +128,8 @@ class ApplicationState extends ChangeNotifier {
     try {
       switch (gift.syncAction) {
         case 'insert':
-          final giftRef = FirebaseFirestore.instance.collection('gifts').doc();
-          gift = await _localDb.changeGiftId(gift, giftRef.id);
+          final giftRef = FirebaseFirestore.instance.collection('gifts').doc(gift.id);
+          // gift = await _localDb.changeGiftId(gift, giftRef.id);
           await giftRef.set(gift.toFirestore());
           await _localDb.markSynced('gifts', gift.id);
           break;
@@ -157,6 +154,11 @@ class ApplicationState extends ChangeNotifier {
   }
 
   //-------------------------------------------------------
+  Future<void> publishGift(FbGift gift) async {
+    gift = await _localDb.publishGift(gift);
+    if(_isOnline) await _syncWithFirestore();
+  }
+
   Future<void> addGift(FbGift gift) async {
     final localId = const Uuid().v4();
     gift.id = localId;
@@ -222,6 +224,12 @@ class ApplicationState extends ChangeNotifier {
       print('Failed to delete gift: $e');
       return false;
     }
+  }
+
+  Future<void> publishEvent(FbEvent event) async {
+    event = await _localDb.publishEvent(event);
+    if(_isOnline) await _syncWithFirestore();
+    notifyListeners();
   }
 
   Future<void> addEvent(FbEvent event) async {
@@ -400,23 +408,20 @@ class ApplicationState extends ChangeNotifier {
         .get();
 
     List<PledgedGiftToMe> giftsToMe = [];
-    print("Raw documents: ${giftsQuery.docs.map((doc) => doc.data())}");
-
     for (final giftDoc in giftsQuery.docs) {
       final gift = giftDoc.data();
-      print("giffffffft data: $gift");
+
       final eventDoc = await FirebaseFirestore.instance
           .collection('events')
           .doc(gift['event'])
           .get();
       final event = eventDoc.data();
-      print('the event is $event');
+
 
       if (event?['createdBy'] == currentUser.uid) {
-        print('event created by me');
+
         var pledgedGiftToMe = PledgedGiftToMe.fromData(gift, giftDoc.id, event);
         giftsToMe.add(pledgedGiftToMe);
-        print("gifts to me: $giftsToMe");
       }
     }
 
@@ -487,4 +492,6 @@ class ApplicationState extends ChangeNotifier {
         .doc(FirebaseAuth.instance.currentUser!.uid)
         .update({'token': FieldValue.delete()});
   }
+
+
 }

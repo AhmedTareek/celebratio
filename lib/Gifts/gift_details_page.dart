@@ -239,13 +239,13 @@ class _GiftDetailsState extends State<GiftDetails> {
           ),
           onPressed: () async {
             try {
-              bool result = false;
-              // bool result = await widget.controller.publishGift(gift.id);
-              if (result) {
-                setState(() {});
-              } else if (mounted) {
+              await widget.controller.publishGift(gift);
+                setState(() {
+                  widget.controller.fetchGifts();
+                });
+               if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('gift already published')),
+                  const SnackBar(content: Text('Gift published successfully')),
                 );
               }
             } catch (e) {

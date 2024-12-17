@@ -299,7 +299,7 @@ class _AddGiftPageState extends State<AddGiftPage> {
         await widget.controller.addGift(gift);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Gift added successfully')),
+            const SnackBar(content: Text('Gift draft added successfully')),
           );
           Navigator.pop(context);
         }

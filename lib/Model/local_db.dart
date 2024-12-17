@@ -246,7 +246,7 @@ class DataBase {
   // Event functions with sync support
   Future<FbEvent> insertNewEvent(FbEvent event, {bool needSync = true}) async {
     Database? myData = await myDataBase;
-    if(event.syncAction != null && event.syncAction == 'draft') {
+    if (event.syncAction != null && event.syncAction == 'draft') {
       event.needSync = 0;
     } else {
       event.needSync = needSync ? 1 : 0;
@@ -276,14 +276,13 @@ class DataBase {
             .query('events', where: 'id = ?', whereArgs: [updatedEvent.id]))
         .map((e) => FbEvent.fromJson(e))
         .first;
-    if(oldEvent.syncAction != 'draft') {
+    if (oldEvent.syncAction != 'draft') {
       updatedEvent.needSync = oldEvent.needSync == 1 ? 1 : (needSync ? 1 : 0);
       // this is done because if the user was offline and created an event then update it
       // we need
       updatedEvent.syncAction =
-      oldEvent.syncAction == 'insert' ? 'insert' : 'update';
+          oldEvent.syncAction == 'insert' ? 'insert' : 'update';
     }
-
 
     updatedEvent.lastModified = DateTime.now().millisecondsSinceEpoch;
     var eventMap = updatedEvent.toMap();
@@ -515,5 +514,52 @@ class DataBase {
       whereArgs: [eventId, 'draft'],
     );
     return response.map((e) => FbGift.fromJson(e)).toList();
+  }
+
+  Future<FbEvent> publishEvent(FbEvent event) async {
+    final db = await myDataBase;
+    await db!.update(
+      'events',
+      {
+        'syncAction': 'insert',
+        'needSync': 1,
+        'lastModified': DateTime.now().millisecondsSinceEpoch,
+      },
+      where: 'id = ?',
+      whereArgs: [event.id],
+    );
+    // publish the gifts within this event
+    var gifts = await getGiftsByEventId(event.id!);
+    for (var gift in gifts) {
+      await db.update(
+          'gifts',
+          {
+            'syncAction': 'insert',
+            'needSync': 1,
+            'lastModified': DateTime.now().millisecondsSinceEpoch,
+          },
+          where: 'id = ?',
+          whereArgs: [gift.id]);
+    }
+    event.syncAction = 'insert';
+    event.needSync = 1;
+    return event;
+  }
+
+  Future<FbGift> publishGift(FbGift gift) async {
+    final db = await myDataBase;
+    await db!.update(
+      'gifts',
+      {
+        'syncAction': 'insert',
+        'needSync': 1,
+        'lastModified': DateTime.now().millisecondsSinceEpoch,
+      },
+      where: 'id = ?',
+      whereArgs: [gift.id],
+    );
+    gift.syncAction = 'insert';
+    gift.needSync = 1;
+    return gift;
   }
 }

@@ -28,7 +28,11 @@ class _GiftListState extends State<GiftList> {
     );
     _controller.init();
     _controller.addListener(() {
-      if (mounted) setState(() {});
+      if (mounted) {
+        setState(() {
+        print("filtered gifts are from notify listerner ${_controller.filteredGifts}");
+      });
+      }
     });
   }
 
@@ -64,11 +68,16 @@ class _GiftListState extends State<GiftList> {
             ? () async {
                 try {
                   // Publish the event
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Event published successfully'),
-                    ),
-                  );
+                  await _controller.publishEvent();
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Event published successfully'),
+                      ),
+                    );
+                  }
+
+                  print("filtered gifts are ${_controller.filteredGifts}");
                 } catch (e) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
