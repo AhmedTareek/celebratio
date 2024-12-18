@@ -21,6 +21,8 @@ import 'notification_manager.dart';
 class ApplicationState extends ChangeNotifier {
   final DataBase _localDb = DataBase();
   bool _isOnline = false;
+  final Map<String, String> userNames = {};
+  late StreamSubscription<QuerySnapshot> _customSubscription;
 
   ApplicationState() {
     init();
@@ -39,7 +41,7 @@ class ApplicationState extends ChangeNotifier {
         .onConnectivityChanged
         .listen((List<ConnectivityResult> result) {
       _isOnline = result.first != ConnectivityResult.none;
-      if (_isOnline) {
+      if (_isOnline && loggedIn) {
         _syncWithFirestore();
       }
       notifyListeners();
@@ -55,7 +57,7 @@ class ApplicationState extends ChangeNotifier {
         initNotificationManager();
       } else {
         _loggedIn = false;
-        removeDeviceToken();
+        // removeDeviceToken();
       }
       notifyListeners();
     });
@@ -64,6 +66,36 @@ class ApplicationState extends ChangeNotifier {
     FirebaseFirestore.instance.collection('events').snapshots().listen((event) {
       notifyListeners();
     });
+  }
+
+  subscribeToEventByCreatorId(String creatorId) {
+    _customSubscription = FirebaseFirestore.instance
+        .collection('events')
+        .where('createdBy', isEqualTo: creatorId) // condition for filtering
+        .snapshots()
+        .listen((event) {
+      print('notifying listeners about events');
+      notifyListeners();
+    });
+  }
+
+  unsubscribeFromEventByCreatorId() {
+    _customSubscription.cancel();
+  }
+
+  subscribeToGiftsByEventId(String eventId) {
+    _customSubscription = FirebaseFirestore.instance
+        .collection('gifts')
+        .where('event', isEqualTo: eventId) // condition for filtering
+        .snapshots()
+        .listen((event) {
+      print('notifying listeners about gifts');
+      notifyListeners();
+    });
+  }
+
+  unsubscribeFromGiftsByEventId() {
+    _customSubscription.cancel();
   }
 
   Future<void> _syncWithFirestore() async {
@@ -128,7 +160,8 @@ class ApplicationState extends ChangeNotifier {
     try {
       switch (gift.syncAction) {
         case 'insert':
-          final giftRef = FirebaseFirestore.instance.collection('gifts').doc(gift.id);
+          final giftRef =
+              FirebaseFirestore.instance.collection('gifts').doc(gift.id);
           // gift = await _localDb.changeGiftId(gift, giftRef.id);
           await giftRef.set(gift.toFirestore());
           await _localDb.markSynced('gifts', gift.id);
@@ -156,7 +189,7 @@ class ApplicationState extends ChangeNotifier {
   //-------------------------------------------------------
   Future<void> publishGift(FbGift gift) async {
     gift = await _localDb.publishGift(gift);
-    if(_isOnline) await _syncWithFirestore();
+    if (_isOnline) await _syncWithFirestore();
   }
 
   Future<void> addGift(FbGift gift) async {
@@ -168,7 +201,7 @@ class ApplicationState extends ChangeNotifier {
 
   Future<bool> updateGift(FbGift gift) async {
     var localGift = await _localDb.getGiftById(gift.id);
-    if(localGift.syncAction!=null && localGift.syncAction == 'draft') {
+    if (localGift.syncAction != null && localGift.syncAction == 'draft') {
       localGift = await _localDb.updateGift(gift);
       return true;
     }
@@ -198,7 +231,7 @@ class ApplicationState extends ChangeNotifier {
     // no deleting for gifts allowed when offline because someone may have pledged it
     // but if the gift is made in offline and not synced yet then we can delete it
     var localGift = await _localDb.getGiftById(giftId);
-    if(localGift.syncAction == 'draft') {
+    if (localGift.syncAction == 'draft') {
       await _localDb.deleteGiftById(giftId, needSync: false);
       return true;
     }
@@ -228,8 +261,8 @@ class ApplicationState extends ChangeNotifier {
 
   Future<void> publishEvent(FbEvent event) async {
     event = await _localDb.publishEvent(event);
-    if(_isOnline) await _syncWithFirestore();
-    notifyListeners();
+    if (_isOnline) await _syncWithFirestore();
+    // notifyListeners();
   }
 
   Future<void> addEvent(FbEvent event) async {
@@ -247,7 +280,8 @@ class ApplicationState extends ChangeNotifier {
 
   Future<void> deleteEvent(String eventId) async {
     var event = await _localDb.deleteEventById(eventId);
-    if (_isOnline && (event.syncAction != 'draft' || event.syncAction != 'insert')) {
+    if (_isOnline &&
+        (event.syncAction != 'draft' || event.syncAction != 'insert')) {
       try {
         await _deleteEventFromFirestore(eventId);
         await _localDb.deleteEventById(eventId, needSync: false);
@@ -318,7 +352,7 @@ class ApplicationState extends ChangeNotifier {
         .where('event', isEqualTo: eventId)
         .get();
     // create from firestore then return a list of FbGift objects
-    List<FbGift> gifts =  giftsQuery.docs
+    List<FbGift> gifts = giftsQuery.docs
         .map((doc) => FbGift.fromFirestore(doc.data(), doc.id))
         .toList();
     gifts.addAll(draftedGifts);
@@ -342,7 +376,7 @@ class ApplicationState extends ChangeNotifier {
         .map((doc) => FbEvent.fromFirestore(doc.data(), doc.id))
         .toList();
     // get drafted events
-    if(friendId == FirebaseAuth.instance.currentUser!.uid) {
+    if (friendId == FirebaseAuth.instance.currentUser!.uid) {
       final draftedEvents = await _localDb.getDraftEvents();
       events.addAll(draftedEvents);
     }
@@ -377,21 +411,42 @@ class ApplicationState extends ChangeNotifier {
     if (!_isOnline) {
       return [];
     }
+
     final currentUser = FirebaseAuth.instance.currentUser!;
+
+    // Query for gifts pledged by the current user
     final giftsQuery = await FirebaseFirestore.instance
         .collection('gifts')
         .where('pledgedBy', isEqualTo: currentUser.uid)
         .get();
 
+    // Collect all unique event IDs from the gifts
+    final List<String> eventIds = giftsQuery.docs
+        .map((doc) => doc.data()['event'] as String)
+        .toSet()
+        .toList();
+
+    // Fetch all events in one go
+    final eventsSnapshot = await FirebaseFirestore.instance
+        .collection('events')
+        .where(FieldPath.documentId, whereIn: eventIds)
+        .get();
+
+    // Create a map for quick event data access
+    Map<String, Map<String, dynamic>> eventsMap = {};
+    for (var eventDoc in eventsSnapshot.docs) {
+      eventsMap[eventDoc.id] = eventDoc.data();
+    }
+
     List<PledgedGift> pledgedGifts = [];
     for (final giftDoc in giftsQuery.docs) {
-      final eventDoc = await FirebaseFirestore.instance
-          .collection('events')
-          .doc(giftDoc.data()['event'])
-          .get();
+      final gift = giftDoc.data();
+      final eventId = gift['event'] as String;
 
-      pledgedGifts.add(
-          PledgedGift.fromData(giftDoc.data(), giftDoc.id, eventDoc.data()));
+      if (eventsMap.containsKey(eventId)) { // Ensure the event was fetched
+        pledgedGifts.add(
+            PledgedGift.fromData(gift, giftDoc.id, eventsMap[eventId]!));
+      }
     }
 
     return pledgedGifts;
@@ -401,26 +456,46 @@ class ApplicationState extends ChangeNotifier {
     if (!_isOnline) {
       return [];
     }
+
     final currentUser = FirebaseAuth.instance.currentUser!;
+
+    // Fetch user document to get eventIds
+    final userDoc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(currentUser.uid)
+        .get();
+    List<String> eventIds = List<String>.from(userDoc.data()?['events'] ?? []);
+
+    // Query for gifts where event is in eventIds and pledgedBy is not null
     final giftsQuery = await FirebaseFirestore.instance
         .collection('gifts')
+        .where('event', whereIn: eventIds)
         .where('pledgedBy', isNull: false)
         .get();
-
+    print("here 1");
+    // Fetch all relevant events in one go
+    final eventsSnapshot = await FirebaseFirestore.instance
+        .collection('events')
+        .where(FieldPath.documentId, whereIn: eventIds)
+        .get();
+    print("here 2");
+    // Create a map for quick lookup of events
+    Map<String, Map<String, dynamic>> eventsMap = {};
+    for (var eventDoc in eventsSnapshot.docs) {
+      eventsMap[eventDoc.id] = eventDoc.data();
+    }
+    print("here 3");
     List<PledgedGiftToMe> giftsToMe = [];
     for (final giftDoc in giftsQuery.docs) {
       final gift = giftDoc.data();
-
-      final eventDoc = await FirebaseFirestore.instance
-          .collection('events')
-          .doc(gift['event'])
-          .get();
-      final event = eventDoc.data();
-
-
-      if (event?['createdBy'] == currentUser.uid) {
-
-        var pledgedGiftToMe = PledgedGiftToMe.fromData(gift, giftDoc.id, event);
+      final eventId = gift['event'] as String;
+      print("here 4");
+      // Check if the event was created by the current user
+      if (eventsMap[eventId]?['createdBy'] == currentUser.uid) {
+        print("here 5");
+        print("gift: $gift, giftDocId: ${giftDoc.id}, event: ${eventsMap[eventId]}");
+        var pledgedGiftToMe = PledgedGiftToMe.fromData(gift, giftDoc.id, eventsMap[eventId]!);
+        print("here 6");
         giftsToMe.add(pledgedGiftToMe);
       }
     }
@@ -449,8 +524,11 @@ class ApplicationState extends ChangeNotifier {
   Future<bool> pledgeGift(
       {required String creatorId,
       required String giftId,
-      required Map<String, String> updatedData})
-  async {
+      required Map<String, String> updatedData}) async {
+    // no pledging for gifts allowed when offline
+    if (!_isOnline) {
+      return false;
+    }
     final giftRef = FirebaseFirestore.instance.collection('gifts').doc(giftId);
     // check if the status of the gift is pledged then refuse any edits
     final giftDoc = await giftRef.get();
@@ -486,12 +564,11 @@ class ApplicationState extends ChangeNotifier {
   }
 
   // remove the device token from the firestore
+  // (this needs to be solved as the user id will not be available after sigout)
   Future<void> removeDeviceToken() async {
     await FirebaseFirestore.instance
         .collection('users')
         .doc(FirebaseAuth.instance.currentUser!.uid)
         .update({'token': FieldValue.delete()});
   }
-
-
 }
