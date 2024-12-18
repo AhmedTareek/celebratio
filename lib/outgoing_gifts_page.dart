@@ -15,17 +15,18 @@ class OutGifts extends StatefulWidget {
 
 class _OutGiftsState extends State<OutGifts> {
   List<PledgedGift> outgoingGifts = [];
+  late ApplicationState appState;
+  bool isLoading = true; // New variable to track loading state
 
   @override
   void initState() {
     super.initState();
+    appState = Provider.of<ApplicationState>(context, listen: false);
     _fetchOutgoingGifts();
   }
 
   Future<void> _fetchOutgoingGifts() async {
     try {
-      // var temp = await db.getOutgoingGiftsWithDetails(loggedInUserId);
-      var appState = Provider.of<ApplicationState>(context, listen: false);
       var temp = await appState.getMyPledgedGifts();
       temp = temp.where((gift) {
         final now = DateTime.now();
@@ -36,11 +37,27 @@ class _OutGiftsState extends State<OutGifts> {
         // Check if the gift's eventDate is today or after today
         return giftDate.isAtSameMomentAs(today) || giftDate.isAfter(today);
       }).toList();
-      setState(() {
-        outgoingGifts = temp;
-      });
+
+      for (var gift in temp) {
+        if (!appState.userNames.containsKey(gift.eventHost)) {
+          appState.getUserNameById(gift.eventHost).then((name) {
+            setState(() {
+              appState.userNames[gift.eventHost] = name;
+            });
+          });
+        }
+      }
+      if (mounted) {
+        setState(() {
+          outgoingGifts = temp;
+          isLoading = false; // Set loading to false once data is fetched
+        });
+      }
     } catch (e) {
       log('Error fetching outgoing gifts:', error: e.toString());
+      setState(() {
+        isLoading = false; // Ensure loading state is updated even on error
+      });
     }
   }
 
@@ -50,13 +67,18 @@ class _OutGiftsState extends State<OutGifts> {
       title: 'Gifts You are Giving',
       filterButtons: const [],
       sortOptions: const [],
+      topWidget: isLoading
+          ? const Padding(
+              padding: EdgeInsets.all(80.0),
+              child: Center(child: CircularProgressIndicator()),
+            )
+          : null,
       tileBuilder: (context, idx) {
-        if (outgoingGifts.isEmpty) {
+        if (!isLoading && outgoingGifts.isEmpty) {
           return const ListTile(
             title: Text('No outgoing gifts found'),
           );
         }
-
         final giftDetail = outgoingGifts[idx];
         final formattedDate =
             '${giftDetail.eventDate.day}-${giftDetail.eventDate.month}'
@@ -69,12 +91,13 @@ class _OutGiftsState extends State<OutGifts> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(giftDetail.eventName),
-              Text('Event hosted by: ${giftDetail.eventHost}'),
+              Text(
+                  'Event hosted by: ${appState.userNames[giftDetail.eventHost] ?? 'Loading...'}'),
             ],
           ),
         );
       },
-      itemCount: outgoingGifts.isEmpty ? 1 : outgoingGifts.length,
+      itemCount: outgoingGifts.length,
     );
   }
 }

@@ -14,18 +14,19 @@ class InGifts extends StatefulWidget {
 
 class _InGiftsState extends State<InGifts> {
   List<PledgedGiftToMe> incomingGifts = [];
+  late ApplicationState appState;
+  bool isLoading = true; // New variable to track loading state
 
   @override
   void initState() {
     super.initState();
+    appState = Provider.of<ApplicationState>(context, listen: false);
     _fetchIncomingGifts();
   }
 
   Future<void> _fetchIncomingGifts() async {
     try {
-      var appState = Provider.of<ApplicationState>(context, listen: false);
       var temp = await appState.getGiftsToBeGivenToMe();
-      print('temp: $temp');
       // var temp = await db.getIncomingGiftsWithDetails(loggedInUserId);
       // filter temp based on the event date being today or after
       temp = temp.where((gift) {
@@ -37,10 +38,21 @@ class _InGiftsState extends State<InGifts> {
         // Check if the gift's eventDate is today or after today
         return giftDate.isAtSameMomentAs(today) || giftDate.isAfter(today);
       }).toList();
+      // check if the name is present in userNames in appState if its not add it
+      for (var gift in temp) {
+        if (!appState.userNames.containsKey(gift.pledgedBy)) {
+          appState.getUserNameById(gift.pledgedBy).then((name) {
+            appState.userNames[gift.pledgedBy] = name;
+          });
+        }
+      }
 
-      setState(() {
-        incomingGifts = temp;
-      });
+      if (mounted) {
+        setState(() {
+          incomingGifts = temp;
+          isLoading = false; // Set loading to false once data is fetched
+        });
+      }
     } catch (e) {
       print('Error fetching incoming gifts: $e');
     }
@@ -50,9 +62,21 @@ class _InGiftsState extends State<InGifts> {
   Widget build(BuildContext context) {
     return CustomWidget(
       title: 'Gifts You are Getting',
-      filterButtons: [],
-      sortOptions: [],
+      filterButtons: const [],
+      sortOptions: const [],
+      topWidget: isLoading
+          ? const Padding(
+              padding: EdgeInsets.all(80.0),
+              child:
+                  Center(child: CircularProgressIndicator()),
+            )
+          : null,
       tileBuilder: (context, idx) {
+        if (!isLoading && incomingGifts.isEmpty) {
+          return const ListTile(
+            title: Text('No outgoing gifts found'),
+          );
+        }
         if (incomingGifts.isEmpty) {
           return const ListTile(
             title: Text('No incoming gifts found'),
@@ -71,12 +95,12 @@ class _InGiftsState extends State<InGifts> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(giftDetail.eventName),
-              Text('Pledged by: ${giftDetail.pledgedBy}'),
+              Text('Pledged by: ${appState.userNames[giftDetail.pledgedBy]}'),
             ],
           ),
         );
       },
-      itemCount: incomingGifts.isEmpty ? 1 : incomingGifts.length,
+      itemCount: incomingGifts.length,
     );
   }
 }

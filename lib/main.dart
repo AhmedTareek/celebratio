@@ -1,3 +1,4 @@
+import 'package:celebratio/in_out_gifts.dart';
 import 'package:celebratio/incoming_gifts_page.dart';
 import 'package:celebratio/outgoing_gifts_page.dart';
 import 'package:celebratio/Profile.dart';
@@ -80,8 +81,8 @@ class _MyHomePageState extends State<MyHomePage> {
         ),
         Friends(),
         Card(),
-        InGifts(),
-        OutGifts(),
+        const InOutGifts(key: ValueKey('incoming_gifts'), isIncoming: true),
+        const InOutGifts(key: ValueKey('outgoing_gifts'), isIncoming: false),
       ];
     }
 
