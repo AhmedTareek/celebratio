@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-class CustomWidget extends StatefulWidget {
+class SmartWidget extends StatefulWidget {
   final Widget? topWidget;
   final List<FilterButton> filterButtons;
   final List<SortOption> sortOptions;
@@ -20,7 +20,7 @@ class CustomWidget extends StatefulWidget {
   final Color? primaryColor;
   final Color? primaryColorLight;
 
-  const CustomWidget({
+  const SmartWidget({
     super.key,
     required this.filterButtons,
     required this.sortOptions,
@@ -41,10 +41,10 @@ class CustomWidget extends StatefulWidget {
   });
 
   @override
-  State<CustomWidget> createState() => _CustomWidgetState();
+  State<SmartWidget> createState() => _SmartWidgetState();
 }
 
-class _CustomWidgetState extends State<CustomWidget> {
+class _SmartWidgetState extends State<SmartWidget> {
   final ScrollController _scrollController = ScrollController();
   bool _isVisible = false;
   int? selectedButtonIndex;
@@ -89,7 +89,7 @@ class _CustomWidgetState extends State<CustomWidget> {
           style: TextStyle(color: widget.primaryColor ?? theme.primaryColor),
         ),
         actions: [
-          if (!widget.sortOptions.isEmpty)
+          if (widget.sortOptions.isNotEmpty)
             Container(
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
@@ -99,7 +99,7 @@ class _CustomWidgetState extends State<CustomWidget> {
               ),
               child: IconButton(
                 onPressed: () => _showSortDialog(context),
-                icon: Icon(Icons.sort),
+                icon: const Icon(Icons.sort),
               ),
             ),
           if (widget.newButton != null)

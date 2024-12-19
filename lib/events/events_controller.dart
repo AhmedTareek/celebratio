@@ -1,4 +1,6 @@
-import 'package:celebratio/Model/fb_event.dart';
+import 'dart:developer';
+
+import 'package:celebratio/Model/event.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -13,6 +15,7 @@ class EventsController extends ChangeNotifier {
   String _sortType = "";
   int _selectedButtonIndex = 0;
   final DateTime _today = DateTime.now();
+  late ApplicationState _appState;
 
   EventsController({required this.context, this.userUid});
 
@@ -25,22 +28,24 @@ class EventsController extends ChangeNotifier {
 
   // Initialize the controller
   Future<void> init() async {
+    _appState = Provider.of<ApplicationState>(context, listen: false);
+    _appState.subscribeToEventByCreatorId(
+        userUid ?? FirebaseAuth.instance.currentUser!.uid);
+    _appState.addListener(fetchEvents);
     await fetchEvents();
-    filterEvents();
   }
 
   // Fetch events from the database
   Future<void> fetchEvents() async {
     try {
-      var appState = Provider.of<ApplicationState>(context, listen: false);
       String uid = userUid ?? FirebaseAuth.instance.currentUser!.uid;
-      List<FbEvent> friendsEvents = await appState.getEventsByFriendId(uid);
+      List<FbEvent> friendsEvents = await _appState.getEventsByFriendId(uid);
 
       _allEvents = friendsEvents.toList();
       filterEvents();
       notifyListeners();
     } catch (e) {
-      print('Error fetching events: $e');
+      log('Error fetching events: $e');
       // You might want to handle the error appropriately here
     }
   }
@@ -85,27 +90,15 @@ class EventsController extends ChangeNotifier {
 
   // Delete an event
   Future<void> deleteEvent(String eventId) async {
-    // try {
-      var appState = Provider.of<ApplicationState>(context, listen: false);
-      await appState.deleteEvent(eventId);
-
-      // Remove from local lists
-      _allEvents.removeWhere((event) => event.id == eventId);
-      filterEvents(); // This will also update filtered events
-    // } catch (e) {
-    //   print('Error deleting event: $e');
-    //   rethrow;
-    //   // rethrow; // Rethrow to handle in UI
-    // }
+    await _appState.deleteEvent(eventId);
   }
 
   // update an event
   Future<void> updateEvent(FbEvent event) async {
     try {
-      var appState = Provider.of<ApplicationState>(context, listen: false);
-      await appState.updateEvent(event);
+      await _appState.updateEvent(event);
     } catch (e) {
-      print('Error updating event: $e');
+      log('Error updating event: $e');
       rethrow; // Rethrow to handle in UI
     }
   }
@@ -113,10 +106,9 @@ class EventsController extends ChangeNotifier {
   // Add an event
   Future<void> addEvent(FbEvent event) {
     try {
-      var appState = Provider.of<ApplicationState>(context, listen: false);
-      return appState.addEvent(event);
+      return _appState.addEvent(event);
     } catch (e) {
-      print('Error adding event: $e');
+      log('Error adding event: $e');
       rethrow; // Rethrow to handle in UI
     }
   }
@@ -128,6 +120,8 @@ class EventsController extends ChangeNotifier {
   // Clear data when disposing
   @override
   void dispose() {
+    _appState.unsubscribeFromEventByCreatorId();
+    _appState.removeListener(fetchEvents);
     _allEvents.clear();
     _filteredEvents.clear();
     super.dispose();

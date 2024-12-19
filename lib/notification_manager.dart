@@ -1,12 +1,14 @@
+import 'dart:developer';
+
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
-import 'acess_tokens.dart';
+import 'access_tokens.dart';
 
 Future<void> backgroundMessageHandler(RemoteMessage message) async {
-  print('Background message received: ${message.notification?.title}, '
+  log('Background message received: ${message.notification?.title}, '
       '${message.notification?.body}, ${message.data}');
 }
 
@@ -32,9 +34,9 @@ class NotificationManager {
     );
     // check if the user granted permission
     if (response.authorizationStatus == AuthorizationStatus.authorized) {
-      print('User granted permission');
+      log('User granted permission');
     }else {
-      print('User declined or has not accepted permission');
+      log('User declined or has not accepted permission');
     }
 
     // Initialize the local notifications plugin
@@ -51,7 +53,7 @@ class NotificationManager {
 
     // Handle messages when the app is in the foreground
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-      print('Foreground message received: ${message.notification?.title}, '
+      log('Foreground message received: ${message.notification?.title}, '
           '${message.notification?.body}, ${message.data}');
       final notification = message.notification;
       if (notification == null) return;
@@ -73,7 +75,14 @@ class NotificationManager {
     // Handle messages when the app is in the background
     FirebaseMessaging.onBackgroundMessage(backgroundMessageHandler);
 
-    print('FCM initialized');
+    log('FCM initialized');
+  }
+
+
+  // disable notifications
+  static Future<void> disableNotifications() async {
+    // this will be called upon log out or when the user disables notifications
+    await _firebaseMessaging.deleteToken();
   }
 
 
@@ -83,10 +92,10 @@ class NotificationManager {
   static Future<String?> getDeviceToken() async {
     try {
       String? token = await _firebaseMessaging.getToken();
-      print('Device Token: $token');
+      log('Device Token: $token');
       return token;
     } catch (e) {
-      print('Error getting device token: $e');
+      log('Error getting device token: $e');
       return null;
     }
   }
@@ -104,7 +113,7 @@ class NotificationManager {
     const String fcmUrl =
         'https://fcm.googleapis.com/v1/projects/$projectId/messages:send';
     final accessToken = await AccessTokenFirebase().getAccessToken();
-    print("targetToken: $targetToken");
+    log("targetToken: $targetToken");
     try {
       final response = await http.post(
         Uri.parse(fcmUrl),
@@ -127,12 +136,12 @@ class NotificationManager {
       );
 
       if (response.statusCode == 200) {
-        print('Notification sent successfully');
+        log('Notification sent successfully');
       } else {
-        print('Failed to send notification: ${response.body}');
+        log('Failed to send notification: ${response.body}');
       }
     } catch (e) {
-      print('Error sending notification: $e');
+      log('Error sending notification: $e');
     }
   }
 }

@@ -1,5 +1,4 @@
-import 'package:celebratio/CustomWidget.dart';
-import 'package:celebratio/Model/fb_pledged_gift.dart';
+import 'package:celebratio/smart_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'dart:developer';
@@ -23,21 +22,21 @@ class _InOutGiftsState extends State<InOutGifts> {
   @override
   void initState() {
     super.initState();
-    print('Init InOutGifts');
     appState = Provider.of<ApplicationState>(context, listen: false);
     widget.isIncoming ? _fetchIncomingGifts() : _fetchOutgoingGifts();
   }
 
   @override
   void dispose() {
-    print('Disposing InOutGifts');
     gifts.clear();
     super.dispose();
   }
+
   @override
   Widget build(BuildContext context) {
-    return CustomWidget(
-      title: widget.isIncoming ? 'Gifts You are Getting' : 'Gifts You are Giving',
+    return SmartWidget(
+      title:
+      widget.isIncoming ? 'Gifts You are Getting' : 'Gifts You are Giving',
       filterButtons: const [],
       sortOptions: const [],
       topWidget: isLoading
@@ -45,33 +44,83 @@ class _InOutGiftsState extends State<InOutGifts> {
         padding: EdgeInsets.all(80.0),
         child: Center(child: CircularProgressIndicator()),
       )
+          : gifts.isEmpty
+          ? const ListTile(
+        title: Text('It looks so empty here!'),
+      )
           : null,
       tileBuilder: (context, idx) {
-        if (!isLoading && gifts.isEmpty) {
-          return const ListTile(
-            title: Text('No gifts found'),
-          );
-        }
-
         final giftDetail = gifts[idx];
         final formattedDate =
-            '${giftDetail.eventDate.day}-${giftDetail.eventDate.month}-${giftDetail.eventDate.year}';
-
+            '${giftDetail.eventDate.day}-${giftDetail.eventDate
+            .month}-${giftDetail.eventDate.year}';
         return ListTile(
-          trailing: Text(formattedDate),
-          title: Text(giftDetail.gift.name),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(
+                12), // Reduced radius for subtlety
+          ),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 8,
+          ),
+          trailing: Text(
+            formattedDate,
+            style: const TextStyle(
+              fontSize: 14,
+              color: Colors.black54,
+            ),
+          ),
+          title: Text(
+            giftDetail.gift.name,
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600, // Less bold, removed italic
+            ),
+          ),
           subtitle: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(giftDetail.eventName),
+              Text(
+                giftDetail.eventName,
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: Colors.black87,
+                ),
+              ),
               Text(
                 widget.isIncoming
                     ? 'Pledged by: ${appState.userNames[giftDetail.pledgedBy]}'
-                    : 'Event hosted by: ${appState.userNames[giftDetail.eventHost] ?? 'Loading...'}',
+                    : 'Event hosted by: ${appState.userNames[giftDetail
+                    .eventHost] ?? 'Loading...'}',
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: Colors.black54,
+                ),
               ),
             ],
           ),
         );
+
+        // return ListTile(
+        //   shape: const RoundedRectangleBorder(
+        //
+        //     borderRadius: BorderRadius.all(Radius.circular(20)),
+        //   ),
+        //   contentPadding: const EdgeInsets.all(10),
+        //   trailing: Text(formattedDate),
+        //   title: Text(giftDetail.gift.name, style: const TextStyle(fontSize: 18, fontStyle: FontStyle.italic,fontWeight: FontWeight.bold)),
+        //   subtitle: Column(
+        //     crossAxisAlignment: CrossAxisAlignment.start,
+        //     children: [
+        //       Text(giftDetail.eventName),
+        //       Text(
+        //         widget.isIncoming
+        //             ? 'Pledged by: ${appState.userNames[giftDetail.pledgedBy]}'
+        //             : 'Event hosted by: ${appState.userNames[giftDetail.eventHost] ?? 'Loading...'}',
+        //       ),
+        //     ],
+        //   ),
+        // );
       },
       itemCount: gifts.length,
     );
@@ -83,7 +132,8 @@ class _InOutGiftsState extends State<InOutGifts> {
       temp = temp.where((gift) {
         final now = DateTime.now();
         final today = DateTime(now.year, now.month, now.day);
-        final giftDate = DateTime(gift.eventDate.year, gift.eventDate.month, gift.eventDate.day);
+        final giftDate = DateTime(
+            gift.eventDate.year, gift.eventDate.month, gift.eventDate.day);
         return giftDate.isAtSameMomentAs(today) || giftDate.isAfter(today);
       }).toList();
 
@@ -102,7 +152,7 @@ class _InOutGiftsState extends State<InOutGifts> {
         });
       }
     } catch (e) {
-      print('Error fetching incoming gifts: $e');
+      log('Error fetching incoming gifts: $e');
     }
   }
 
@@ -112,7 +162,8 @@ class _InOutGiftsState extends State<InOutGifts> {
       temp = temp.where((gift) {
         final now = DateTime.now();
         final today = DateTime(now.year, now.month, now.day);
-        final giftDate = DateTime(gift.eventDate.year, gift.eventDate.month, gift.eventDate.day);
+        final giftDate = DateTime(
+            gift.eventDate.year, gift.eventDate.month, gift.eventDate.day);
         return giftDate.isAtSameMomentAs(today) || giftDate.isAfter(today);
       }).toList();
 
@@ -139,5 +190,4 @@ class _InOutGiftsState extends State<InOutGifts> {
       });
     }
   }
-
 }

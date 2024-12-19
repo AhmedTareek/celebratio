@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:celebratio/Model/fb_Friend.dart';
+import 'package:celebratio/Model/friend.dart';
 import 'package:provider/provider.dart';
 import '../app_state.dart';
 
@@ -7,8 +7,8 @@ class FriendsController extends ChangeNotifier {
   final BuildContext context;
   final TextEditingController searchController = TextEditingController();
   late ApplicationState _appState;
-  List<FbFriend> _allFriends = [];
-  List<FbFriend> _filteredFriends = [];
+  List<Friend> _allFriends = [];
+  List<Friend> _filteredFriends = [];
 
 
 
@@ -20,7 +20,7 @@ class FriendsController extends ChangeNotifier {
     searchController.addListener(_filterFriends);
   }
 
-  List<FbFriend> get filteredFriends => _filteredFriends;
+  List<Friend> get filteredFriends => _filteredFriends;
 
   void _filterFriends() {
     String query = searchController.text.toLowerCase();

@@ -1,8 +1,8 @@
-import 'package:celebratio/Model/fb_event.dart';
+import 'package:celebratio/Model/event.dart';
 import 'package:celebratio/Gifts/gift_details_page.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import '../CustomWidget.dart';
+import '../smart_widget.dart';
 import 'add_gift_page.dart';
 import 'gift_controller.dart';
 
@@ -30,7 +30,6 @@ class _GiftListState extends State<GiftList> {
     _controller.addListener(() {
       if (mounted) {
         setState(() {
-        print("filtered gifts are from notify listerner ${_controller.filteredGifts}");
       });
       }
     });
@@ -55,7 +54,7 @@ class _GiftListState extends State<GiftList> {
 
   @override
   Widget build(BuildContext context) {
-    return CustomWidget(
+    return SmartWidget(
       title: _controller.currentEvent.name,
       topWidget: EventCard(
         name: _controller.currentEvent.name,
@@ -77,7 +76,6 @@ class _GiftListState extends State<GiftList> {
                     );
                   }
 
-                  print("filtered gifts are ${_controller.filteredGifts}");
                 } catch (e) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
@@ -115,7 +113,7 @@ class _GiftListState extends State<GiftList> {
       onClearSortOptionsSelected: _controller.clearSort,
       tileBuilder: (context, idx) {
         final gift = _controller.filteredGifts[idx];
-        final pledgerName = _controller.giftPledgerNames[idx];
+        final pledgerName = _controller.getPledgerName(gift.pledgedBy);
         return Padding(
           padding: const EdgeInsets.all(8.0),
           child: ListTile(
@@ -126,7 +124,7 @@ class _GiftListState extends State<GiftList> {
                   builder: (context) => GiftDetails(
                     event: _controller.currentEvent,
                     controller: _controller,
-                    gift: gift,
+                    giftId: gift.id,
                   ),
                 ),
               ).then((_) => _controller.fetchGifts());
@@ -186,7 +184,7 @@ class _GiftListState extends State<GiftList> {
                         color: Colors.grey[600], fontWeight: FontWeight.normal),
                   )
                 : Text(gift.name,
-                    style: TextStyle(fontWeight: FontWeight.bold)),
+                    style: const TextStyle(fontWeight: FontWeight.bold)),
             subtitle: gift.syncAction == 'draft'
                 ? Text(
                     'This is a draft',
@@ -194,7 +192,7 @@ class _GiftListState extends State<GiftList> {
                         color: Colors.grey[600], fontWeight: FontWeight.normal),
                   )
                 : Text(
-                    pledgerName.isEmpty
+                    pledgerName == null
                         ? 'No one has pledged yet'
                         : 'Pledged by: $pledgerName',
                   ),
@@ -483,11 +481,9 @@ class EventCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Define colors from palette
-    const Color darkBlue = Color(0xFF10375C); // dark blue background
-    const Color yellow = Color(0xFFF3C623); // Yellow for titles
-    const Color orange = Color(0xFFEB8317); // Orange for icons and accents
-    const Color lightBlue =
-        Color(0xFFF4F6FF); // white blue for contrast elements
+    const Color darkBlue = Color(0xFF10375C);
+    const Color yellow = Color(0xFFF3C623);
+    const Color lightBlue = Color(0xFFF4F6FF);
 
     return Card(
       elevation: 4,
@@ -508,7 +504,7 @@ class EventCard extends StatelessWidget {
                 Expanded(
                   child: Text(
                     name,
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
                       color: yellow,
@@ -523,7 +519,7 @@ class EventCard extends StatelessWidget {
                       color: yellow.withOpacity(0.2),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Text(
+                    child: const Text(
                       'DRAFT',
                       style: TextStyle(
                         color: yellow,
@@ -537,12 +533,12 @@ class EventCard extends StatelessWidget {
             const SizedBox(height: 16),
             Row(
               children: [
-                Icon(Icons.location_on, color: yellow),
+                const Icon(Icons.location_on, color: yellow),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     location,
-                    style: TextStyle(color: lightBlue, fontSize: 16),
+                    style: const TextStyle(color: lightBlue, fontSize: 16),
                   ),
                 ),
               ],
@@ -550,18 +546,18 @@ class EventCard extends StatelessWidget {
             const SizedBox(height: 12),
             Row(
               children: [
-                Icon(Icons.calendar_today, color: yellow),
+                const Icon(Icons.calendar_today, color: yellow),
                 const SizedBox(width: 8),
                 Text(
                   date,
-                  style: TextStyle(color: lightBlue, fontSize: 16),
+                  style: const TextStyle(color: lightBlue, fontSize: 16),
                 ),
               ],
             ),
             const SizedBox(height: 16),
             Text(
               description,
-              style: TextStyle(
+              style: const TextStyle(
                 color: lightBlue,
                 fontSize: 16,
                 height: 1.5,
@@ -592,8 +588,8 @@ class EventCard extends StatelessWidget {
                         borderRadius: BorderRadius.circular(8),
                       ),
                     ),
-                    icon: Icon(Icons.publish, color: darkBlue),
-                    label: Text(
+                    icon: const Icon(Icons.publish, color: darkBlue),
+                    label: const Text(
                       'Publish Event',
                       style: TextStyle(color: darkBlue),
                     ),

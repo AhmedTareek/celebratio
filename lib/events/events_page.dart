@@ -1,4 +1,4 @@
-import 'package:celebratio/CustomWidget.dart';
+import 'package:celebratio/smart_widget.dart';
 import '/Gifts/gift_list_page.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -42,7 +42,7 @@ class _EventState extends State<EventsPage> {
     var draftTextStyle = TextStyle(
       color: Colors.grey[600],
     );
-    return CustomWidget(
+    return SmartWidget(
       title: _setAppBarTitle(),
       newButton: widget.userUid == loggedInUserId
           ? NewButton(
@@ -91,40 +91,54 @@ class _EventState extends State<EventsPage> {
         final formatter = DateFormat('yyyy-MM-dd');
         final event = _controller.filteredEvents[index];
         return ListTile(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => GiftList(eventData: event),
-                ),
-              );
-            },
-            onLongPress: widget.userUid == loggedInUserId
-                ? () => _showOptionsDialog(index)
-                : null,
-            title: Text(
-              event.name,
-              style: event.syncAction == 'draft' ? draftTextStyle : null,
-            ),
-            subtitle: event.syncAction == 'draft'
-                ? Text(
-                    'This is a draft event',
-                    style: draftTextStyle,
-                  )
-                : Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        event.description,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
+          shape: RoundedRectangleBorder(
+            borderRadius:
+                BorderRadius.circular(12), // Reduced radius for subtlety
+          ),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 8,
+          ),
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => GiftList(eventData: event),
+              ),
+            );
+          },
+          onLongPress: widget.userUid == loggedInUserId
+              ? () => _showOptionsDialog(index)
+              : null,
+          title: Text(
+            event.name,
+            style: event.syncAction == 'draft'
+                ? draftTextStyle
+                : const TextStyle(
+                    fontSize: 16, // Slightly reduced size
+                    fontWeight: FontWeight.w600, // Less bold
                   ),
-            trailing: Text(
-              formatter.format(event.date),
-              style: event.syncAction == 'draft' ? draftTextStyle : null,
-            )
+          ),
+          subtitle: event.syncAction == 'draft'
+              ? Text(
+                  'This is a draft event',
+                  style: draftTextStyle,
+                )
+              : Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      event.description,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    Text(event.category),
+                  ],
+                ),
+          trailing: Text(
+            formatter.format(event.date),
+            style: event.syncAction == 'draft' ? draftTextStyle : null,
+          ),
         );
       },
       itemCount: _controller.filteredEvents.length,
@@ -163,6 +177,9 @@ class _EventState extends State<EventsPage> {
                   );
                   if (context.mounted) {
                     Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Event deleted')),
+                    );
                   }
                 } catch (e) {
                   if (context.mounted) {
@@ -180,10 +197,7 @@ class _EventState extends State<EventsPage> {
   }
 
   String _setAppBarTitle() {
-    if (widget.userUid == null) {
-      return 'Events';
-    }
-    if (widget.userUid == loggedInUserId) {
+    if (widget.userUid == null || widget.userUid == loggedInUserId) {
       return 'My Events';
     }
     return '${widget.userDisplayName ?? ""}\'s Events';

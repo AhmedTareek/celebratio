@@ -1,18 +1,18 @@
-import 'package:celebratio/Model/fb_event.dart';
+import 'package:celebratio/Model/event.dart';
 import 'package:flutter/material.dart';
-import 'package:celebratio/Model/fb_gift.dart';
+import 'package:celebratio/Model/gift.dart';
 import 'gift_controller.dart';
 import 'edit_gift_page.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class GiftDetails extends StatefulWidget {
-  final FbGift gift;
+  final String giftId;
   final FbEvent event;
   final GiftController controller;
 
   const GiftDetails({
     super.key,
-    required this.gift,
+    required this.giftId,
     required this.controller,
     required this.event,
   });
@@ -23,11 +23,33 @@ class GiftDetails extends StatefulWidget {
 
 class _GiftDetailsState extends State<GiftDetails> {
   final loggedInUserId = FirebaseAuth.instance.currentUser!.uid;
+  late Gift gift;
+  late VoidCallback _listener;
+  bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    gift = widget.controller.getGiftById(widget.giftId);
+    _listener = () {
+      if (mounted) {
+        setState(() {
+          gift = widget.controller.getGiftById(widget.giftId);
+        });
+      }
+    };
+    widget.controller.addListener(_listener);
+  }
+
+  @override
+  void dispose() {
+    widget.controller.removeListener(_listener);
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final gift = widget.gift;
     final isOwner = widget.controller.currentEvent.createdBy == loggedInUserId;
 
     return Scaffold(
@@ -35,7 +57,7 @@ class _GiftDetailsState extends State<GiftDetails> {
       floatingActionButton: isOwner && gift.status == 'Available'
           ? FloatingActionButton(
               onPressed: () async {
-                await Navigator.push<FbGift>(
+                await Navigator.push<Gift>(
                   context,
                   MaterialPageRoute(
                     builder: (context) => EditGiftPage(
@@ -48,10 +70,10 @@ class _GiftDetailsState extends State<GiftDetails> {
                         if (result) {
                           // Update the state with the new gift values
                           setState(() {
-                            widget.gift.name = updatedGift.name;
-                            widget.gift.price = updatedGift.price;
-                            widget.gift.description = updatedGift.description;
-                            widget.gift.category = updatedGift.category;
+                            gift.name = updatedGift.name;
+                            gift.price = updatedGift.price;
+                            gift.description = updatedGift.description;
+                            gift.category = updatedGift.category;
                           });
                         } else if (context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
@@ -97,6 +119,47 @@ class _GiftDetailsState extends State<GiftDetails> {
           fit: BoxFit.cover,
           width: double.infinity,
           height: 250,
+          errorBuilder:
+              (BuildContext context, Object exception, StackTrace? stackTrace) {
+            return Container(
+              width: double.infinity,
+              height: 250,
+              color: theme.colorScheme.surfaceContainerHighest,
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.cloud_off,
+                        size: 50, color: theme.colorScheme.onSurfaceVariant),
+                    const SizedBox(height: 8),
+                    Text(
+                      'No Internet Connection',
+                      style: theme.textTheme.bodyLarge
+                          ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                    ),
+                    Text(
+                      'Please check your connection to view the image.',
+                      style: theme.textTheme.bodySmall
+                          ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                      textAlign: TextAlign.center,
+                    )
+                  ],
+                ),
+              ),
+            );
+          },
+          loadingBuilder: (BuildContext context, Widget child,
+              ImageChunkEvent? loadingProgress) {
+            if (loadingProgress == null) return child;
+            return Center(
+              child: CircularProgressIndicator(
+                value: loadingProgress.expectedTotalBytes != null
+                    ? loadingProgress.cumulativeBytesLoaded /
+                        loadingProgress.expectedTotalBytes!
+                    : null,
+              ),
+            );
+          },
         ),
         Positioned(
           top: 16,
@@ -113,7 +176,7 @@ class _GiftDetailsState extends State<GiftDetails> {
     );
   }
 
-  Widget _buildGiftInfo(ThemeData theme, FbGift gift) {
+  Widget _buildGiftInfo(ThemeData theme, Gift gift) {
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: Column(
@@ -139,7 +202,7 @@ class _GiftDetailsState extends State<GiftDetails> {
     );
   }
 
-  Widget _buildPriceAndStatus(ThemeData theme, FbGift gift) {
+  Widget _buildPriceAndStatus(ThemeData theme, Gift gift) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
       child: Row(
@@ -162,7 +225,7 @@ class _GiftDetailsState extends State<GiftDetails> {
     );
   }
 
-  Widget _buildDescription(ThemeData theme, FbGift gift) {
+  Widget _buildDescription(ThemeData theme, Gift gift) {
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: Text(
@@ -175,93 +238,123 @@ class _GiftDetailsState extends State<GiftDetails> {
     );
   }
 
-  Widget _buildPledgeButton(ThemeData theme, FbGift gift) {
+  Widget _buildPledgeButton(ThemeData theme, Gift gift) {
     return Container(
       alignment: Alignment.bottomCenter,
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 20.0),
       child: SizedBox(
         width: double.infinity,
-        child: ElevatedButton(
-          style: ElevatedButton.styleFrom(
-            padding: const EdgeInsets.all(16),
-            backgroundColor: theme.colorScheme.primary,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
-          onPressed: () async {
-            try {
-              bool result = await widget.controller.pledgeGift(
-                creatorId: widget.event.createdBy,
-                giftId: gift.id,
-                userId: loggedInUserId,
-              );
-              if (result) {
-                setState(() {
-                  gift.status = 'Pledged';
-                  gift.pledgedBy = loggedInUserId;
-                });
-              } else if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('gift already pledged')),
-                );
-              }
-            } catch (e) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Error pledging gift: ${e.toString()}')),
-              );
-            }
-          },
-          child: Text(
-            'Pledge This Gift',
-            style: theme.textTheme.labelLarge?.copyWith(
-              color: theme.colorScheme.onPrimary,
-            ),
-          ),
-        ),
+        child: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.all(16),
+                  backgroundColor: theme.colorScheme.primary,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                onPressed: () async {
+                  setState(() {
+                    _isLoading = true;
+                  });
+                  try {
+                    bool result = await widget.controller.pledgeGift(
+                      creatorId: widget.event.createdBy,
+                      giftId: gift.id,
+                      userId: loggedInUserId,
+                    );
+                    if (result) {
+                      setState(() {
+                        gift.status = 'Pledged';
+                        gift.pledgedBy = loggedInUserId;
+                      });
+                    } else if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('gift already pledged')),
+                      );
+                    }
+                  } catch (e) {
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                            content:
+                                Text('Error pledging gift: ${e.toString()}')),
+                      );
+                    }
+                  } finally {
+                    if (mounted) {
+                      setState(() {
+                        _isLoading = false;
+                      });
+                    }
+                  }
+                },
+                child: Text(
+                  'Pledge This Gift',
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    color: theme.colorScheme.onPrimary,
+                  ),
+                ),
+              ),
       ),
     );
   }
 
-  Widget _buildPublishButton(ThemeData theme, FbGift gift) {
+  Widget _buildPublishButton(ThemeData theme, Gift gift) {
     return Container(
       alignment: Alignment.bottomCenter,
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 20.0),
       child: SizedBox(
         width: double.infinity,
-        child: ElevatedButton(
-          style: ElevatedButton.styleFrom(
-            padding: const EdgeInsets.all(16),
-            backgroundColor: theme.colorScheme.primary,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
-          onPressed: () async {
-            try {
-              await widget.controller.publishGift(gift);
-                setState(() {
-                  widget.controller.fetchGifts();
-                });
-               if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Gift published successfully')),
-                );
-              }
-            } catch (e) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                    content: Text('Error publishing gift: ${e.toString()}')),
-              );
-            }
-          },
-          child: Text(
-            'Publish This Gift',
-            style: theme.textTheme.labelLarge?.copyWith(
-              color: theme.colorScheme.onPrimary,
-            ),
-          ),
-        ),
+        child: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.all(16),
+                  backgroundColor: theme.colorScheme.primary,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                onPressed: () async {
+                  setState(() {
+                    _isLoading = true;
+                  });
+                  try {
+                    await widget.controller.publishGift(gift);
+                    if (mounted) {
+                      setState(() {
+                        widget.controller.fetchGifts();
+                      });
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                            content: Text('Gift published successfully')),
+                      );
+                    }
+                  } catch (e) {
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                            content:
+                                Text('Error publishing gift: ${e.toString()}')),
+                      );
+                    }
+                  } finally {
+                    if (mounted) {
+                      setState(() {
+                        _isLoading = false;
+                      });
+                    }
+                  }
+                },
+                child: Text(
+                  'Publish This Gift',
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    color: theme.colorScheme.onPrimary,
+                  ),
+                ),
+              ),
       ),
     );
   }

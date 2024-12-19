@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:celebratio/CustomWidget.dart';
+import 'package:celebratio/smart_widget.dart';
 import 'friends_controller.dart';
 import '../events/events_page.dart';
 
@@ -52,11 +52,15 @@ class _FriendsState extends State<Friends> {
               onPressed: () async {
                 try {
                   await _controller.addNewFriend(emailController.text);
-                  Navigator.pop(context);
+                  if(context.mounted) {
+                    Navigator.pop(context);
+                  }
                 } catch (e) {
-                  ScaffoldMessenger.of(context).showSnackBar(
+                  if(context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(content: Text(e.toString())),
                   );
+                  }
                 }
               },
               child: const Text('Add'),
@@ -72,7 +76,7 @@ class _FriendsState extends State<Friends> {
     return ListenableBuilder(
       listenable: _controller,
       builder: (context, child) {
-        return CustomWidget(
+        return SmartWidget(
           title: 'My Friends',
           newButton: NewButton(
             label: 'New Friend',
@@ -90,14 +94,19 @@ class _FriendsState extends State<Friends> {
               ),
             ),
           ),
-          filterButtons: [],
-          sortOptions: [],
+          filterButtons: const [],
+          sortOptions: const [],
           tileBuilder: (context, index) {
             final friend = _controller.filteredFriends[index];
             return ListTile(
-              leading: const CircleAvatar(),
-              title: Text(friend.name),
-              subtitle: const Text('Hello, I am using Celebratio'),
+              leading: CircleAvatar(
+                backgroundColor: Colors.grey[200],
+                child: const Icon(Icons.person_outline, color: Colors.black54),
+              ),
+              title: Padding(
+                padding: const EdgeInsets.fromLTRB(0,8,0,8.0),
+                child: Text(friend.name, style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 18)),
+              ),
               trailing: FutureBuilder<int>(
                 future: _controller.getUpcomingEventsCount(friend.id),
                 builder: (context, snapshot) {
@@ -112,22 +121,26 @@ class _FriendsState extends State<Friends> {
                       snapshot.data == 0) {
                     return const SizedBox();
                   } else {
-                    return Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        CircleAvatar(
-                          radius: 12,
-                          backgroundColor: Theme.of(context).primaryColor,
+                    return Container(
+                      width: 26,
+                      height: 26,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: Theme.of(context).primaryColor,
+                          width: 1.5,
                         ),
-                        Text(
+                      ),
+                      child: Center(
+                        child: Text(
                           snapshot.data!.toString(),
-                          style: const TextStyle(
-                            fontSize: 12,
+                          style: TextStyle(
+                            fontSize: 16,
                             fontWeight: FontWeight.bold,
-                            color: Colors.white,
+                            color: Theme.of(context).primaryColor,
                           ),
                         ),
-                      ],
+                      ),
                     );
                   }
                 },

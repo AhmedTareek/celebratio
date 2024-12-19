@@ -1,7 +1,7 @@
-import 'fb_gift.dart';
+import 'gift.dart';
 
 class PledgedGiftToMe {
-  final FbGift gift;
+  final Gift gift;
   final String eventName;
   final DateTime eventDate;
   final String pledgedBy;
@@ -16,7 +16,7 @@ class PledgedGiftToMe {
   factory PledgedGiftToMe.fromData(Map<String, dynamic> giftData, String giftId,
       Map<String, dynamic>? eventData) {
     return PledgedGiftToMe(
-      gift: FbGift.fromFirestore(giftData, giftId),
+      gift: Gift.fromFirestore(giftData, giftId),
       eventName: eventData?['name'] ?? '',
       eventDate: DateTime.parse(
           eventData?['date'] as String? ?? DateTime.now().toIso8601String()),

@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:celebratio/Model/fb_event.dart';
-import 'package:celebratio/Model/fb_gift.dart';
+import 'package:celebratio/Model/event.dart';
+import 'package:celebratio/Model/gift.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
@@ -13,16 +13,16 @@ class GiftController extends ChangeNotifier {
   final BuildContext context;
   final FbEvent event;
 
-  List<FbGift> _allGifts = [];
-  List<FbGift> _filteredGifts = [];
-  final List<String> _giftPledgerNames = [];
+  List<Gift> _allGifts = [];
+  List<Gift> _filteredGifts = [];
   String _selectedFilter = 'All';
   String _sortType = "";
   String? _currentEventCreatorName;
   final ImagePicker _picker = ImagePicker();
   late ApplicationState _appState;
+
   // Getters
-  List<FbGift> get filteredGifts => _filteredGifts;
+  List<Gift> get filteredGifts => _filteredGifts;
 
   String get selectedFilter => _selectedFilter;
 
@@ -32,8 +32,6 @@ class GiftController extends ChangeNotifier {
 
   String? get currentEventCreatorName => _currentEventCreatorName;
 
-  List<String> get giftPledgerNames => _giftPledgerNames;
-
   GiftController({
     required this.context,
     required this.event,
@@ -41,11 +39,26 @@ class GiftController extends ChangeNotifier {
 
   // Initialize the controller
   Future<void> init() async {
+    print("Initializing gifts controller");
     _appState = Provider.of<ApplicationState>(context, listen: false);
-    _currentEventCreatorName =
-        await _appState.getUserNameById(currentEvent.createdBy);
+    _appState.subscribeToGiftsByEventId(event.id!);
     _appState.addListener(fetchGifts);
+    if (!_appState.userNames.containsKey(event.createdBy)) {
+      _currentEventCreatorName =
+          await _appState.getUserNameById(event.createdBy);
+      _appState.userNames[event.createdBy] = _currentEventCreatorName!;
+    } else {
+      _currentEventCreatorName = _appState.userNames[event.createdBy];
+    }
+
     await fetchGifts();
+  }
+
+  String? getPledgerName(String? pledgerId) {
+    if (pledgerId == null) {
+      return null;
+    }
+    return _appState.userNames[pledgerId];
   }
 
   // Fetch gifts from the database
@@ -55,17 +68,15 @@ class GiftController extends ChangeNotifier {
       _allGifts = List.from(gifts);
 
       // loop over all gifts and get the pledger name for each pledged gift
-      _giftPledgerNames.clear();
       for (var gift in _allGifts) {
-        if (gift.status == 'Pledged') {
+        if (gift.status == 'Pledged' &&
+            !_appState.userNames.containsKey(gift.pledgedBy)) {
+          // If not found, fetch the name and add it to the map
           var pledgerName = await _appState.getUserNameById(gift.pledgedBy!);
-          _giftPledgerNames.add(pledgerName);
-        } else {
-          _giftPledgerNames.add('');
+          _appState.userNames[gift.pledgedBy!] = pledgerName;
         }
       }
       filterGifts();
-      print("Filtered gifts before calling notify listeners: $_filteredGifts");
       notifyListeners();
     } catch (e) {
       print('Error fetching gifts: $e');
@@ -97,7 +108,6 @@ class GiftController extends ChangeNotifier {
   void updateFilter(String filter) {
     _selectedFilter = filter;
     filterGifts();
-
   }
 
   // Update sort type and refresh list
@@ -113,7 +123,7 @@ class GiftController extends ChangeNotifier {
   }
 
   // Add new gift
-  Future<void> addGift(FbGift gift) async {
+  Future<void> addGift(Gift gift) async {
     try {
       gift.eventId = event.id!;
       await _appState.addGift(gift);
@@ -147,7 +157,7 @@ class GiftController extends ChangeNotifier {
         final responseBody = await response.stream.bytesToString();
         final jsonResponse = jsonDecode(responseBody);
         return jsonResponse['data']['url'];
-      } else if(context.mounted){
+      } else if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
               content: Text(
@@ -161,6 +171,7 @@ class GiftController extends ChangeNotifier {
       );
       return null;
     }
+    return null;
   }
 
   // Delete gift
@@ -179,7 +190,7 @@ class GiftController extends ChangeNotifier {
     }
   }
 
-  Future<bool> editGift(FbGift gift) async {
+  Future<bool> editGift(Gift gift) async {
     try {
       bool result = await _appState.updateGift(gift);
       if (result) {
@@ -218,7 +229,7 @@ class GiftController extends ChangeNotifier {
     }
   }
 
-  Future<void> publishGift(FbGift gift) async {
+  Future<void> publishGift(Gift gift) async {
     try {
       await _appState.publishGift(gift);
       await fetchGifts();
@@ -230,18 +241,25 @@ class GiftController extends ChangeNotifier {
 
   Future<void> publishEvent() async {
     try {
-      await _appState.publishEvent(event); // you need to use new id now
+      await _appState.publishEvent(event);
     } catch (e) {
       print('Error publishing event: $e');
       rethrow;
     }
   }
 
+  Gift getGiftById(String id) {
+    return _allGifts.firstWhere((gift) => gift.id == id);
+  }
+
   @override
   void dispose() {
+    print("Disposing gifts controller");
+    _appState.unsubscribeFromGiftsByEventId();
     _appState.removeListener(fetchGifts);
     _allGifts.clear();
     _filteredGifts.clear();
     super.dispose();
   }
+
 }

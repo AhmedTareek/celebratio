@@ -52,7 +52,9 @@ dependencies:
   googleapis_auth: ^1.6.0
   flutter_local_notifications: ^18.0.1
   introduction_screen: ^3.1.14
+  shared_preferences: ^2.3.4
 
+  path: any
 dev_dependencies:
   flutter_test:
     sdk: flutter

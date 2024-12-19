@@ -1,8 +1,9 @@
 import 'dart:async';
+import 'dart:developer';
 
-import 'package:celebratio/Model/fb_Friend.dart';
-import 'package:celebratio/Model/fb_event.dart';
-import 'package:celebratio/Model/fb_gift.dart';
+import 'package:celebratio/Model/friend.dart';
+import 'package:celebratio/Model/event.dart';
+import 'package:celebratio/Model/gift.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -12,8 +13,8 @@ import 'package:firebase_ui_auth/firebase_ui_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:uuid/uuid.dart';
 
-import 'Model/fb_pledged_gift.dart';
-import 'Model/fb_pledged_gifts_to_me.dart';
+import 'Model/pledged_gift.dart';
+import 'Model/pledged_gifts_to_me.dart';
 import 'Model/local_db.dart';
 import 'firebase_options.dart';
 import 'notification_manager.dart';
@@ -54,10 +55,8 @@ class ApplicationState extends ChangeNotifier {
     FirebaseAuth.instance.userChanges().listen((user) {
       if (user != null) {
         _loggedIn = true;
-        initNotificationManager();
       } else {
         _loggedIn = false;
-        // removeDeviceToken();
       }
       notifyListeners();
     });
@@ -74,7 +73,7 @@ class ApplicationState extends ChangeNotifier {
         .where('createdBy', isEqualTo: creatorId) // condition for filtering
         .snapshots()
         .listen((event) {
-      print('notifying listeners about events');
+      log('notifying listeners about events');
       notifyListeners();
     });
   }
@@ -89,7 +88,7 @@ class ApplicationState extends ChangeNotifier {
         .where('event', isEqualTo: eventId) // condition for filtering
         .snapshots()
         .listen((event) {
-      print('notifying listeners about gifts');
+      log('notifying listeners about gifts');
       notifyListeners();
     });
   }
@@ -97,6 +96,47 @@ class ApplicationState extends ChangeNotifier {
   unsubscribeFromGiftsByEventId() {
     _customSubscription.cancel();
   }
+
+  Future<void> deleteAllLocalData() async {
+  await _localDb.deleteAllRows('gifts');
+  await _localDb.deleteAllRows('events');
+  log("Deleted all local data");
+}
+
+
+Future<void> fetchAndStoreUserEventsAndGifts() async {
+  final currentUser = FirebaseAuth.instance.currentUser!;
+
+  // Fetch events created by the current user
+  final eventsQuery = await FirebaseFirestore.instance
+      .collection('events')
+      .where('createdBy', isEqualTo: currentUser.uid)
+      .get();
+
+  // check if the user has no events
+  if (eventsQuery.docs.isEmpty) {
+    return;
+  }
+
+  // Insert events into local database
+  for (var eventDoc in eventsQuery.docs) {
+    final event = FbEvent.fromFirestore(eventDoc.data(), eventDoc.id);
+    await _localDb.insertNewEvent(event, needSync: false);
+  }
+
+  // Fetch gifts associated with the user's events
+  final giftsQuery = await FirebaseFirestore.instance
+      .collection('gifts')
+      .where('event', whereIn: eventsQuery.docs.map((doc) => doc.id).toList())
+      .get();
+
+  // Insert gifts into local database
+  for (var giftDoc in giftsQuery.docs) {
+    final gift = Gift.fromFirestore(giftDoc.data(), giftDoc.id);
+    await _localDb.insertNewGift(gift, needSync: false);
+  }
+  log("Fetched and stored user events and gifts");
+}
 
   Future<void> _syncWithFirestore() async {
     if (!_isOnline) return;
@@ -152,11 +192,11 @@ class ApplicationState extends ChangeNotifier {
           break;
       }
     } catch (e) {
-      print('Event sync failed: ${e.toString()}');
+      log('Event sync failed: ${e.toString()}');
     }
   }
 
-  Future<void> _syncGift(FbGift gift) async {
+  Future<void> _syncGift(Gift gift) async {
     try {
       switch (gift.syncAction) {
         case 'insert':
@@ -182,24 +222,24 @@ class ApplicationState extends ChangeNotifier {
           break;
       }
     } catch (e) {
-      print('Gift sync failed: ${e.toString()}');
+      log('Gift sync failed: ${e.toString()}');
     }
   }
 
   //-------------------------------------------------------
-  Future<void> publishGift(FbGift gift) async {
+  Future<void> publishGift(Gift gift) async {
     gift = await _localDb.publishGift(gift);
     if (_isOnline) await _syncWithFirestore();
   }
 
-  Future<void> addGift(FbGift gift) async {
+  Future<void> addGift(Gift gift) async {
     final localId = const Uuid().v4();
     gift.id = localId;
     gift = await _localDb.insertNewGift(gift);
     if (_isOnline && gift.syncAction != 'draft') await _syncGift(gift);
   }
 
-  Future<bool> updateGift(FbGift gift) async {
+  Future<bool> updateGift(Gift gift) async {
     var localGift = await _localDb.getGiftById(gift.id);
     if (localGift.syncAction != null && localGift.syncAction == 'draft') {
       localGift = await _localDb.updateGift(gift);
@@ -254,7 +294,7 @@ class ApplicationState extends ChangeNotifier {
       await FirebaseFirestore.instance.collection('gifts').doc(giftId).delete();
       return true;
     } catch (e) {
-      print('Failed to delete gift: $e');
+      log('Failed to delete gift: $e');
       return false;
     }
   }
@@ -267,7 +307,7 @@ class ApplicationState extends ChangeNotifier {
 
   Future<void> addEvent(FbEvent event) async {
     final localId = const Uuid()
-        .v4(); // thats like a temp id till we sync it with firestore
+        .v4(); // that's like a temp id till we sync it with firestore
     event.id = localId;
     event = await _localDb.insertNewEvent(event);
     if (_isOnline && event.syncAction != 'draft') await _syncEvent(event);
@@ -286,7 +326,7 @@ class ApplicationState extends ChangeNotifier {
         await _deleteEventFromFirestore(eventId);
         await _localDb.deleteEventById(eventId, needSync: false);
       } catch (e) {
-        print('Failed to delete event: $e');
+        log('Failed to delete event buff: $e');
       }
     }
   }
@@ -313,7 +353,7 @@ class ApplicationState extends ChangeNotifier {
         'events': FieldValue.arrayRemove([eventId]),
       });
     } catch (e) {
-      print('Failed to delete event: $e');
+      log('Failed to delete event from firestore: $e');
     }
   }
 
@@ -336,7 +376,7 @@ class ApplicationState extends ChangeNotifier {
     });
   }
 
-  Future<List<FbGift>> getGiftsByEventId(String eventId) async {
+  Future<List<Gift>> getGiftsByEventId(String eventId) async {
     // if not online get from local db
     if (!_isOnline) {
       final localGifts = await _localDb.getGiftsByEventId(eventId);
@@ -352,8 +392,8 @@ class ApplicationState extends ChangeNotifier {
         .where('event', isEqualTo: eventId)
         .get();
     // create from firestore then return a list of FbGift objects
-    List<FbGift> gifts = giftsQuery.docs
-        .map((doc) => FbGift.fromFirestore(doc.data(), doc.id))
+    List<Gift> gifts = giftsQuery.docs
+        .map((doc) => Gift.fromFirestore(doc.data(), doc.id))
         .toList();
     gifts.addAll(draftedGifts);
     return gifts;
@@ -383,7 +423,7 @@ class ApplicationState extends ChangeNotifier {
     return events;
   }
 
-  Future<List<FbFriend>> getFriends() async {
+  Future<List<Friend>> getFriends() async {
     if (!_isOnline) {
       return [];
     }
@@ -403,7 +443,7 @@ class ApplicationState extends ChangeNotifier {
         .get();
     // create from firestore then return a list of Friend objects
     return friendsQuery.docs
-        .map((doc) => FbFriend.fromFirestore(doc.data(), doc.id))
+        .map((doc) => Friend.fromFirestore(doc.data(), doc.id))
         .toList();
   }
 
@@ -419,6 +459,11 @@ class ApplicationState extends ChangeNotifier {
         .collection('gifts')
         .where('pledgedBy', isEqualTo: currentUser.uid)
         .get();
+
+    // check if the user has no pledged gifts
+    if (giftsQuery.docs.isEmpty) {
+      return [];
+    }
 
     // Collect all unique event IDs from the gifts
     final List<String> eventIds = giftsQuery.docs
@@ -443,9 +488,10 @@ class ApplicationState extends ChangeNotifier {
       final gift = giftDoc.data();
       final eventId = gift['event'] as String;
 
-      if (eventsMap.containsKey(eventId)) { // Ensure the event was fetched
-        pledgedGifts.add(
-            PledgedGift.fromData(gift, giftDoc.id, eventsMap[eventId]!));
+      if (eventsMap.containsKey(eventId)) {
+        // Ensure the event was fetched
+        pledgedGifts
+            .add(PledgedGift.fromData(gift, giftDoc.id, eventsMap[eventId]!));
       }
     }
 
@@ -465,6 +511,10 @@ class ApplicationState extends ChangeNotifier {
         .doc(currentUser.uid)
         .get();
     List<String> eventIds = List<String>.from(userDoc.data()?['events'] ?? []);
+    // Check if the user has no events
+    if (eventIds.isEmpty) {
+      return [];
+    }
 
     // Query for gifts where event is in eventIds and pledgedBy is not null
     final giftsQuery = await FirebaseFirestore.instance
@@ -472,30 +522,24 @@ class ApplicationState extends ChangeNotifier {
         .where('event', whereIn: eventIds)
         .where('pledgedBy', isNull: false)
         .get();
-    print("here 1");
     // Fetch all relevant events in one go
     final eventsSnapshot = await FirebaseFirestore.instance
         .collection('events')
         .where(FieldPath.documentId, whereIn: eventIds)
         .get();
-    print("here 2");
     // Create a map for quick lookup of events
     Map<String, Map<String, dynamic>> eventsMap = {};
     for (var eventDoc in eventsSnapshot.docs) {
       eventsMap[eventDoc.id] = eventDoc.data();
     }
-    print("here 3");
     List<PledgedGiftToMe> giftsToMe = [];
     for (final giftDoc in giftsQuery.docs) {
       final gift = giftDoc.data();
       final eventId = gift['event'] as String;
-      print("here 4");
       // Check if the event was created by the current user
       if (eventsMap[eventId]?['createdBy'] == currentUser.uid) {
-        print("here 5");
-        print("gift: $gift, giftDocId: ${giftDoc.id}, event: ${eventsMap[eventId]}");
-        var pledgedGiftToMe = PledgedGiftToMe.fromData(gift, giftDoc.id, eventsMap[eventId]!);
-        print("here 6");
+        var pledgedGiftToMe =
+            PledgedGiftToMe.fromData(gift, giftDoc.id, eventsMap[eventId]!);
         giftsToMe.add(pledgedGiftToMe);
       }
     }
@@ -564,11 +608,15 @@ class ApplicationState extends ChangeNotifier {
   }
 
   // remove the device token from the firestore
-  // (this needs to be solved as the user id will not be available after sigout)
-  Future<void> removeDeviceToken() async {
-    await FirebaseFirestore.instance
-        .collection('users')
-        .doc(FirebaseAuth.instance.currentUser!.uid)
-        .update({'token': FieldValue.delete()});
+  // (this needs to be solved as the user id will not be available after sign out)
+  void removeNotificationDeviceToken() {
+    NotificationManager.disableNotifications();
+  }
+
+  void updateUserName(String newName) {
+    final user = FirebaseAuth.instance.currentUser;
+    final userDocRef =
+        FirebaseFirestore.instance.collection('users').doc(user!.uid);
+    userDocRef.update({'name': newName});
   }
 }
