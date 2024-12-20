@@ -18,10 +18,17 @@ class GiftList extends StatefulWidget {
 class _GiftListState extends State<GiftList> {
   late GiftController _controller;
   final loggedInUserId = FirebaseAuth.instance.currentUser!.uid;
+  late bool isGiftInPastEvent;
+
+  bool _isSameDay(DateTime a, DateTime b) =>
+      a.year == b.year && a.month == b.month && a.day == b.day;
 
   @override
   void initState() {
     super.initState();
+    final eventDate = widget.eventData.date;
+    isGiftInPastEvent = eventDate.isBefore(DateTime.now()) &&
+        !_isSameDay(eventDate, DateTime.now());
     _controller = GiftController(
       context: context,
       event: widget.eventData,
@@ -29,8 +36,7 @@ class _GiftListState extends State<GiftList> {
     _controller.init();
     _controller.addListener(() {
       if (mounted) {
-        setState(() {
-      });
+        setState(() {});
       }
     });
   }
@@ -75,14 +81,13 @@ class _GiftListState extends State<GiftList> {
                       ),
                     );
                   }
-
                 } catch (e) {
-                  if(context.mounted) {
+                  if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Error publishing event: $e'),
-                    ),
-                  );
+                      SnackBar(
+                        content: Text('Error publishing event: $e'),
+                      ),
+                    );
                   }
                 }
               }
@@ -215,7 +220,8 @@ class _GiftListState extends State<GiftList> {
         );
       },
       itemCount: _controller.filteredGifts.length,
-      newButton: _controller.currentEvent.createdBy == loggedInUserId
+      newButton: _controller.currentEvent.createdBy == loggedInUserId &&
+              !isGiftInPastEvent
           ? NewButton(
               label: 'New Gift',
               onPressed: _addNewGift,
@@ -224,241 +230,6 @@ class _GiftListState extends State<GiftList> {
     );
   }
 }
-//
-// class EventCard extends StatelessWidget {
-//   final String name;
-//   final String location;
-//   final String date;
-//   final String description;
-//   final String createdBy;
-//
-//   const EventCard({
-//     super.key,
-//     required this.name,
-//     required this.location,
-//     required this.date,
-//     required this.description,
-//     required this.createdBy,
-//   });
-//
-//   @override
-//   Widget build(BuildContext context) {
-//     var textColor = Colors.white;
-//     var iconsColor = Colors.white;
-//     //var textColor = Color(0xFF10375C);
-//     return Card(
-//       color: Theme.of(context).primaryColor,
-//       //Color(0xFFF3C623), // Yellow background color for the card
-//       margin: EdgeInsets.all(16),
-//       shape: RoundedRectangleBorder(
-//         borderRadius: BorderRadius.circular(16),
-//       ),
-//       child: Padding(
-//         padding: const EdgeInsets.all(16.0),
-//         child: Column(
-//           crossAxisAlignment: CrossAxisAlignment.start,
-//           mainAxisSize: MainAxisSize.min,
-//           children: [
-//             Text(
-//               name,
-//               style: TextStyle(
-//                 fontSize: 20,
-//                 fontWeight: FontWeight.bold,
-//                 color: Color(
-//                     0xFFF3C623), //Color(0xFFEB8317), // Orange color for the title
-//               ),
-//             ),
-//             SizedBox(height: 8),
-//             Row(
-//               children: [
-//                 Icon(Icons.location_on, color: iconsColor),
-//                 SizedBox(width: 8),
-//                 Text(
-//                   location,
-//                   style: TextStyle(color: textColor),
-//                 ),
-//               ],
-//             ),
-//             SizedBox(height: 8),
-//             Row(
-//               children: [
-//                 Icon(Icons.calendar_today, color: iconsColor),
-//                 SizedBox(width: 8),
-//                 Text(
-//                   date,
-//                   style: TextStyle(color: textColor),
-//                 ),
-//               ],
-//             ),
-//             SizedBox(height: 16),
-//             Text(
-//               description,
-//               style: TextStyle(
-//                 color: textColor, // Dark blue color for the description
-//               ),
-//             ),
-//             SizedBox(height: 16),
-//             // Divider(color: Color(0xFF10375C).withOpacity(0.3)), // Divider for separation
-//             Align(
-//               alignment: Alignment.centerRight,
-//               child: Text(
-//                 '$createdBy',
-//                 style: TextStyle(
-//                   color: textColor.withOpacity(0.7),
-//                   // Slightly lighter blue
-//                   fontSize: 12,
-//                   fontStyle: FontStyle.italic,
-//                 ),
-//               ),
-//             ),
-//           ],
-//         ),
-//       ),
-//     );
-//   }
-// }
-
-// class EventCard extends StatelessWidget {
-//   final String name;
-//   final String location;
-//   final String date;
-//   final String description;
-//   final String createdBy;
-//   final bool isDraft;  // New property to check if event is draft
-//   final VoidCallback? onPublish;  // New callback for publish action
-//
-//   const EventCard({
-//     super.key,
-//     required this.name,
-//     required this.location,
-//     required this.date,
-//     required this.description,
-//     required this.createdBy,
-//     this.isDraft = false,  // Default to false
-//     this.onPublish,
-//   });
-//
-//   @override
-//   Widget build(BuildContext context) {
-//     final theme = Theme.of(context);
-//     final textColor = theme.colorScheme.onPrimary;
-//     final iconsColor = theme.colorScheme.onPrimary;
-//
-//     return Card(
-//       elevation: 4,
-//       color: theme.primaryColor,
-//       margin: const EdgeInsets.all(16),
-//       shape: RoundedRectangleBorder(
-//         borderRadius: BorderRadius.circular(16),
-//       ),
-//       child: Column(
-//         children: [
-//           Padding(
-//             padding: const EdgeInsets.all(16.0),
-//             child: Column(
-//               crossAxisAlignment: CrossAxisAlignment.start,
-//               mainAxisSize: MainAxisSize.min,
-//               children: [
-//                 Row(
-//                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-//                   children: [
-//                     Expanded(
-//                       child: Text(
-//                         name,
-//                         style: TextStyle(
-//                           fontSize: 24,
-//                           fontWeight: FontWeight.bold,
-//                           color: theme.colorScheme.secondary,
-//                         ),
-//                       ),
-//                     ),
-//                     if (isDraft)
-//                       Container(
-//                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-//                         decoration: BoxDecoration(
-//                           color: theme.colorScheme.secondary.withOpacity(0.2),
-//                           borderRadius: BorderRadius.circular(12),
-//                         ),
-//                         child: Text(
-//                           'DRAFT',
-//                           style: TextStyle(
-//                             color: theme.colorScheme.secondary,
-//                             fontWeight: FontWeight.bold,
-//                             fontSize: 12,
-//                           ),
-//                         ),
-//                       ),
-//                   ],
-//                 ),
-//                 const SizedBox(height: 16),
-//                 Row(
-//                   children: [
-//                     Icon(Icons.location_on, color: iconsColor),
-//                     const SizedBox(width: 8),
-//                     Expanded(
-//                       child: Text(
-//                         location,
-//                         style: TextStyle(color: textColor, fontSize: 16),
-//                       ),
-//                     ),
-//                   ],
-//                 ),
-//                 const SizedBox(height: 12),
-//                 Row(
-//                   children: [
-//                     Icon(Icons.calendar_today, color: iconsColor),
-//                     const SizedBox(width: 8),
-//                     Text(
-//                       date,
-//                       style: TextStyle(color: textColor, fontSize: 16),
-//                     ),
-//                   ],
-//                 ),
-//                 const SizedBox(height: 16),
-//                 Text(
-//                   description,
-//                   style: TextStyle(
-//                     color: textColor,
-//                     fontSize: 16,
-//                     height: 1.5,
-//                   ),
-//                 ),
-//                 const SizedBox(height: 16),
-//                 Row(
-//                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-//                   children: [
-//                     Text(
-//                       createdBy,
-//                       style: TextStyle(
-//                         color: textColor.withOpacity(0.7),
-//                         fontSize: 14,
-//                         fontStyle: FontStyle.italic,
-//                       ),
-//                     ),
-//                     if (isDraft && onPublish != null)
-//                       ElevatedButton.icon(
-//                         onPressed: onPublish,
-//                         style: ElevatedButton.styleFrom(
-//                           backgroundColor: theme.colorScheme.secondary,
-//                           foregroundColor: theme.colorScheme.onSecondary,
-//                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-//                           shape: RoundedRectangleBorder(
-//                             borderRadius: BorderRadius.circular(8),
-//                           ),
-//                         ),
-//                         icon: const Icon(Icons.publish),
-//                         label: const Text('Publish Event'),
-//                       ),
-//                   ],
-//                 ),
-//               ],
-//             ),
-//           ),
-//         ],
-//       ),
-//     );
-//   }
-// }
 
 class EventCard extends StatelessWidget {
   final String name;

@@ -57,8 +57,6 @@ class _ProfileWidgetState extends State<ProfileWidget> {
               }
             });
           },
-          // activeColor: Colors.blue,
-          // inactiveThumbColor: Colors.grey,
         ),
         // Styled Elevated Button for navigating to incoming gifts
         Padding(

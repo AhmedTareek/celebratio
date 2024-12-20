@@ -31,7 +31,7 @@ class _IntroductionScreenPageState extends State<IntroductionScreenPage> {
       pages: [
         PageViewModel(
           titleWidget: const Padding(
-            padding: EdgeInsets.fromLTRB(0, 50, 0, 50),
+            padding: EdgeInsets.fromLTRB(0, 30, 0, 0),
             child: Text(
               'Welcome to Celebratio!',
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 30),
@@ -60,7 +60,7 @@ class _IntroductionScreenPageState extends State<IntroductionScreenPage> {
         ),
         PageViewModel(
           titleWidget: const Padding(
-            padding: EdgeInsets.fromLTRB(0, 50, 0, 50),
+            padding: EdgeInsets.fromLTRB(0, 30, 0, 0),
             child: Text(
               'Connect with Friends',
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 30),

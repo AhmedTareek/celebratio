@@ -100,27 +100,6 @@ class _InOutGiftsState extends State<InOutGifts> {
             ],
           ),
         );
-
-        // return ListTile(
-        //   shape: const RoundedRectangleBorder(
-        //
-        //     borderRadius: BorderRadius.all(Radius.circular(20)),
-        //   ),
-        //   contentPadding: const EdgeInsets.all(10),
-        //   trailing: Text(formattedDate),
-        //   title: Text(giftDetail.gift.name, style: const TextStyle(fontSize: 18, fontStyle: FontStyle.italic,fontWeight: FontWeight.bold)),
-        //   subtitle: Column(
-        //     crossAxisAlignment: CrossAxisAlignment.start,
-        //     children: [
-        //       Text(giftDetail.eventName),
-        //       Text(
-        //         widget.isIncoming
-        //             ? 'Pledged by: ${appState.userNames[giftDetail.pledgedBy]}'
-        //             : 'Event hosted by: ${appState.userNames[giftDetail.eventHost] ?? 'Loading...'}',
-        //       ),
-        //     ],
-        //   ),
-        // );
       },
       itemCount: gifts.length,
     );
