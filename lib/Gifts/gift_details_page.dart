@@ -102,7 +102,9 @@ class _GiftDetailsState extends State<GiftDetails> {
               _buildDescription(theme, gift),
               if (!isOwner && gift.status == 'Available')
                 _buildPledgeButton(theme, gift),
-              if (gift.syncAction == 'draft') _buildPublishButton(theme, gift),
+              if (gift.syncAction == 'draft' &&
+                  widget.event.syncAction != 'draft')
+                _buildPublishButton(theme, gift),
             ],
           ),
         ),

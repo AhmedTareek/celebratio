@@ -77,11 +77,13 @@ class _GiftListState extends State<GiftList> {
                   }
 
                 } catch (e) {
-                  ScaffoldMessenger.of(context).showSnackBar(
+                  if(context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text('Error publishing event: $e'),
                     ),
                   );
+                  }
                 }
               }
             : null,

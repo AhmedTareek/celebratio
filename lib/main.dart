@@ -8,7 +8,7 @@ import 'package:go_router/go_router.dart';
 import 'app_state.dart';
 import 'home_page.dart';
 
-void main() async {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
   runApp(ChangeNotifierProvider(

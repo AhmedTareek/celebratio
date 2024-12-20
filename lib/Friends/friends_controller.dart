@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:celebratio/Model/friend.dart';
 import 'package:provider/provider.dart';
@@ -36,7 +38,7 @@ class FriendsController extends ChangeNotifier {
       _allFriends = temp.toList();
       _filterFriends();
     } catch (e) {
-      throw Exception('Error fetching friends: $e');
+      log('Error fetching friends: $e');
     }
   }
 
@@ -49,7 +51,7 @@ class FriendsController extends ChangeNotifier {
       await _appState.addFriend(email: email);
       await fetchFriends();
     } catch (e) {
-      throw Exception('Error adding friend: $e');
+      log('Error adding friend: $e');
     }
   }
 
@@ -57,7 +59,8 @@ class FriendsController extends ChangeNotifier {
     try {
       return await _appState.getUpcomingEventsCountByUserId(userId);
     } catch (e) {
-      throw Exception('Error fetching events count: $e');
+      log('Error fetching events count: $e');
+      return 0;
     }
   }
 

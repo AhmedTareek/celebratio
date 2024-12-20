@@ -1,47 +1,3 @@
-// import 'package:cloud_firestore/cloud_firestore.dart';
-// import 'package:firebase_auth/firebase_auth.dart';
-// import 'package:firebase_ui_auth/firebase_ui_auth.dart';
-// import 'package:flutter/material.dart';
-// import 'package:go_router/go_router.dart';
-//
-// import 'in_out_gifts.dart';
-//
-// class ProfileWidget extends StatelessWidget {
-//   const ProfileWidget({super.key});
-//
-//   @override
-//   Widget build(BuildContext context) {
-//     return ProfileScreen(
-//       providers: const [],
-//       actions: [
-//         SignedOutAction((context) {
-//           context.pushReplacement('/');
-//         }),
-//         DisplayNameChangedAction((context, oldName, newName) {
-//           //update users document with the new name
-//           final user = FirebaseAuth.instance.currentUser;
-//           final userDocRef = FirebaseFirestore.instance
-//               .collection('users')
-//               .doc(user!.uid);
-//           userDocRef.update({'name': newName});
-//         }),
-//       ],
-//       children: [
-//         ElevatedButton(
-//             onPressed: () {}, child: Text('Disable Notifications')),
-//         ElevatedButton(
-//             onPressed: () {
-//               Navigator.push(
-//                   context,
-//                   MaterialPageRoute(
-//                       builder: (context) =>
-//                       const InOutGifts(isIncoming: false)));
-//             },
-//             child: Text('My Incoming Gifts'))
-//       ],
-//     );
-//   }
-// }
 import 'package:celebratio/app_state.dart';
 import 'package:celebratio/notification_manager.dart';
 import 'package:firebase_ui_auth/firebase_ui_auth.dart';
@@ -113,7 +69,7 @@ class _ProfileWidgetState extends State<ProfileWidget> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                    builder: (context) => const InOutGifts(isIncoming: false)),
+                    builder: (context) => const InOutGifts(isIncoming: true)),
               );
             },
             child: const Text('My Incoming Gifts'),

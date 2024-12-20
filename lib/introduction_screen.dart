@@ -30,14 +30,20 @@ class _IntroductionScreenPageState extends State<IntroductionScreenPage> {
       globalBackgroundColor: Colors.white,
       pages: [
         PageViewModel(
-          title: "Welcome to Celebratio!",
+          titleWidget: const Padding(
+            padding: EdgeInsets.fromLTRB(0, 50, 0, 50),
+            child: Text(
+              'Welcome to Celebratio!',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 30),
+            ),
+          ),
           bodyWidget: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               ClipRRect(
                 borderRadius: BorderRadius.circular(250.0),
                 child: Image.asset(
-                  'asset/images/Celebration.png',
+                  'asset/images/Celebrations.webp',
                   width: 350,
                   fit: BoxFit.cover,
                 ),
@@ -53,7 +59,13 @@ class _IntroductionScreenPageState extends State<IntroductionScreenPage> {
           decoration: pageDecoration,
         ),
         PageViewModel(
-          title: "Connect with Friends",
+          titleWidget: const Padding(
+            padding: EdgeInsets.fromLTRB(0, 50, 0, 50),
+            child: Text(
+              'Connect with Friends',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 30),
+            ),
+          ),
           bodyWidget: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [

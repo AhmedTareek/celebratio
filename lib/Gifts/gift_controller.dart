@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:developer';
 import 'dart:io';
 
 import 'package:celebratio/Model/event.dart';
@@ -39,7 +40,7 @@ class GiftController extends ChangeNotifier {
 
   // Initialize the controller
   Future<void> init() async {
-    print("Initializing gifts controller");
+    log("Initializing gifts controller");
     _appState = Provider.of<ApplicationState>(context, listen: false);
     _appState.subscribeToGiftsByEventId(event.id!);
     _appState.addListener(fetchGifts);
@@ -79,7 +80,7 @@ class GiftController extends ChangeNotifier {
       filterGifts();
       notifyListeners();
     } catch (e) {
-      print('Error fetching gifts: $e');
+      log('Error fetching gifts: $e');
     }
   }
 
@@ -129,7 +130,7 @@ class GiftController extends ChangeNotifier {
       await _appState.addGift(gift);
       await fetchGifts();
     } catch (e) {
-      print('Error adding gift: $e');
+      log('Error adding gift: $e');
       rethrow;
     }
   }
@@ -166,9 +167,11 @@ class GiftController extends ChangeNotifier {
         return null;
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
+      if(context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error uploading image: $e')),
       );
+      }
       return null;
     }
     return null;
@@ -185,7 +188,7 @@ class GiftController extends ChangeNotifier {
       }
       return false;
     } catch (e) {
-      print('Error deleting gift: $e');
+      log('Error deleting gift: $e');
       rethrow;
     }
   }
@@ -199,7 +202,7 @@ class GiftController extends ChangeNotifier {
       }
       return false;
     } catch (e) {
-      print('Error editing gift: $e');
+      log('Error editing gift: $e');
       rethrow;
     }
   }
@@ -224,7 +227,7 @@ class GiftController extends ChangeNotifier {
       }
       return false;
     } catch (e) {
-      print('Error pledging gift: $e');
+      log('Error pledging gift: $e');
       rethrow;
     }
   }
@@ -234,7 +237,7 @@ class GiftController extends ChangeNotifier {
       await _appState.publishGift(gift);
       await fetchGifts();
     } catch (e) {
-      print('Error publishing gift: $e');
+      log('Error publishing gift: $e');
       rethrow;
     }
   }
@@ -243,7 +246,7 @@ class GiftController extends ChangeNotifier {
     try {
       await _appState.publishEvent(event);
     } catch (e) {
-      print('Error publishing event: $e');
+      log('Error publishing event: $e');
       rethrow;
     }
   }
@@ -254,7 +257,7 @@ class GiftController extends ChangeNotifier {
 
   @override
   void dispose() {
-    print("Disposing gifts controller");
+    log("Disposing gifts controller");
     _appState.unsubscribeFromGiftsByEventId();
     _appState.removeListener(fetchGifts);
     _allGifts.clear();

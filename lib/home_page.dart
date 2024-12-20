@@ -43,7 +43,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 NavigationDestination(
                     icon: Icon(Icons.people_alt_rounded), label: 'Friends'),
                 NavigationDestination(
-                    icon: Icon(Icons.cake_rounded), label: 'In'),
+                    icon: Icon(Icons.card_giftcard), label: 'In'),
                 NavigationDestination(
                     icon: Icon(Icons.checklist_rounded), label: 'Out'),
               ],
