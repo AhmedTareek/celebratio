@@ -1,9 +1,9 @@
 import 'dart:async';
 import 'dart:developer';
 
-import 'package:celebratio/Model/friend.dart';
-import 'package:celebratio/Model/event.dart';
-import 'package:celebratio/Model/gift.dart';
+import 'package:celebratio/model/friend.dart';
+import 'package:celebratio/model/event.dart';
+import 'package:celebratio/model/gift.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -13,9 +13,9 @@ import 'package:firebase_ui_auth/firebase_ui_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:uuid/uuid.dart';
 
-import 'Model/pledged_gift.dart';
-import 'Model/pledged_gifts_to_me.dart';
-import 'Model/local_db.dart';
+import 'model/pledged_gift.dart';
+import 'model/pledged_gifts_to_me.dart';
+import 'model/local_db.dart';
 import 'firebase_options.dart';
 import 'notification_manager.dart';
 

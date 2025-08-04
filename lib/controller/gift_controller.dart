@@ -2,8 +2,8 @@ import 'dart:convert';
 import 'dart:developer';
 import 'dart:io';
 
-import 'package:celebratio/Model/event.dart';
-import 'package:celebratio/Model/gift.dart';
+import 'package:celebratio/model/event.dart';
+import 'package:celebratio/model/gift.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';

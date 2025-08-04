@@ -1,5 +1,5 @@
 import 'dart:io';
-import 'package:celebratio/Model/gift.dart';
+import 'package:celebratio/model/gift.dart';
 import 'package:flutter/material.dart';
 import '../controller/gift_controller.dart';
 

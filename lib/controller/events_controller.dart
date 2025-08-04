@@ -1,6 +1,6 @@
 import 'dart:developer';
 
-import 'package:celebratio/Model/event.dart';
+import 'package:celebratio/model/event.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';

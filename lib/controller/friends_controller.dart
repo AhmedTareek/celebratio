@@ -1,7 +1,7 @@
 import 'dart:developer';
 
 import 'package:flutter/material.dart';
-import 'package:celebratio/Model/friend.dart';
+import 'package:celebratio/model/friend.dart';
 import 'package:provider/provider.dart';
 import '../app_state.dart';
 

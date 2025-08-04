@@ -1,8 +1,8 @@
 import 'dart:developer';
 
 import 'package:path/path.dart';
-import 'package:celebratio/Model/event.dart';
-import 'package:celebratio/Model/gift.dart';
+import 'package:celebratio/model/event.dart';
+import 'package:celebratio/model/gift.dart';
 import 'package:sqflite/sqflite.dart';
 
 class DataBase {

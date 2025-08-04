@@ -1,6 +1,6 @@
-import 'package:celebratio/Model/event.dart';
+import 'package:celebratio/model/event.dart';
 import 'package:flutter/material.dart';
-import 'package:celebratio/Model/gift.dart';
+import 'package:celebratio/model/gift.dart';
 import '../controller/gift_controller.dart';
 import 'edit_gift_page.dart';
 import 'package:firebase_auth/firebase_auth.dart';

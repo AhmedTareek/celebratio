@@ -1,7 +1,7 @@
 import 'package:celebratio/controller/events_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../Model/event.dart';
+import '../model/event.dart';
 
 class EditEventPage extends StatefulWidget {
   final FbEvent event;
