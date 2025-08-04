@@ -1,9 +1,9 @@
-import 'package:celebratio/smart_widget.dart';
+import 'package:celebratio/view/smart_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'dart:developer';
 
-import 'app_state.dart';
+import '../app_state.dart';
 
 class InOutGifts extends StatefulWidget {
   final bool isIncoming; // Parameter to switch between incoming and outgoing

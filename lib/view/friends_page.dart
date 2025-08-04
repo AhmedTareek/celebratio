@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:celebratio/smart_widget.dart';
-import 'friends_controller.dart';
-import '../events/events_page.dart';
+import 'package:celebratio/view/smart_widget.dart';
+import '../controller/friends_controller.dart';
+import 'events_page.dart';
 
 class Friends extends StatefulWidget {
   const Friends({super.key});

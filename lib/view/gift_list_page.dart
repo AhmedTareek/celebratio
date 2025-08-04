@@ -1,10 +1,10 @@
 import 'package:celebratio/Model/event.dart';
-import 'package:celebratio/Gifts/gift_details_page.dart';
+import 'package:celebratio/view/gift_details_page.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import '../smart_widget.dart';
+import 'smart_widget.dart';
 import 'add_gift_page.dart';
-import 'gift_controller.dart';
+import '../controller/gift_controller.dart';
 
 class GiftList extends StatefulWidget {
   final FbEvent eventData;

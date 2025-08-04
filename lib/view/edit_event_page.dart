@@ -1,4 +1,4 @@
-import 'package:celebratio/events/events_controller.dart';
+import 'package:celebratio/controller/events_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../Model/event.dart';

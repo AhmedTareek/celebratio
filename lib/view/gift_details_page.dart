@@ -1,7 +1,7 @@
 import 'package:celebratio/Model/event.dart';
 import 'package:flutter/material.dart';
 import 'package:celebratio/Model/gift.dart';
-import 'gift_controller.dart';
+import '../controller/gift_controller.dart';
 import 'edit_gift_page.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 

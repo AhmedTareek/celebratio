@@ -6,7 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'events/events_page.dart';
+import 'events_page.dart';
 import 'in_out_gifts.dart';
 
 class ProfileWidget extends StatefulWidget {

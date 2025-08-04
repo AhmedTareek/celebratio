@@ -1,11 +1,11 @@
-import 'package:celebratio/smart_widget.dart';
-import '/Gifts/gift_list_page.dart';
+import 'package:celebratio/view/smart_widget.dart';
+import 'gift_list_page.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'add_event_page.dart';
 import 'edit_event_page.dart';
-import 'events_controller.dart';
+import '../controller/events_controller.dart';
 
 class EventsPage extends StatefulWidget {
   final String? userUid;

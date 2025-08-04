@@ -2,9 +2,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import 'Friends/friends_page.dart';
-import 'app_state.dart';
-import 'events/events_page.dart';
+import 'friends_page.dart';
+import '../app_state.dart';
+import 'events_page.dart';
 import 'in_out_gifts.dart';
 import 'introduction_screen.dart';
 

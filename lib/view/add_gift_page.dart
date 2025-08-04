@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:celebratio/Model/gift.dart';
 import 'package:flutter/material.dart';
-import 'gift_controller.dart';
+import '../controller/gift_controller.dart';
 
 class AddGiftPage extends StatefulWidget {
   final GiftController controller;

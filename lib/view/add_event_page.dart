@@ -1,5 +1,5 @@
 import 'package:celebratio/Model/event.dart';
-import 'package:celebratio/events/events_controller.dart';
+import 'package:celebratio/controller/events_controller.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
