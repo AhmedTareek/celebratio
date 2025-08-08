@@ -11,7 +11,7 @@ syncs data with Firestore and, for User A, the local database. Firestore notifie
 of changes, prompting Controllers to update Views, ensuring real-time UI synchronization 
 across users.
 
-![Architecture Diagram](docs/images/architecture_diagram.png)
+![Architecture Diagram](docs/images/architecture_diagram.svg)
 
 ## Firestore Structure
 This section outlines the structure of the Firestore database used in the application.
