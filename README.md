@@ -27,6 +27,8 @@ those are used for synchronization purposes.
 ![Local Database Structure](docs/images/local_database_structure.png)
 
 ## Demo
+
+
 <iframe width="560" height="315" src="https://www.youtube.com/embed/3bToEHU0_jI?si=8Ueafb60xLXoeNfk" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 
 
